@@ -4,228 +4,273 @@
 
 # Agile Toolbox
 
-**Facilitation tools that run entirely in your browser.**
-No account, no backend, no data leaving the machine.
+**Team tools that run entirely in your browser.**
+For scrum masters, agile coaches, managers, developers, QA, and any team that now includes AI agents.
+No account, no backend, no install, no data leaving the machine.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-4f46e5.svg)](LICENSE)
 ![Dependencies: none](https://img.shields.io/badge/dependencies-none-128a5b.svg)
-![Build step: none](https://img.shields.io/badge/build%20step-none-128a5b.svg)
+![Install: none](https://img.shields.io/badge/install-none-128a5b.svg)
 ![Works offline](https://img.shields.io/badge/works-offline-1f6feb.svg)
 
-[The tools](#the-tools) · [Quick start](#quick-start) · [Privacy model](#the-privacy-model) · [Contributing](CONTRIBUTING.md)
+[Why this exists](#why-this-exists) · [The tools](#the-tools) · [Quick start](#quick-start) · [Privacy](#your-data-stays-with-you) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-Most tools a scrum master needs are either a paid SaaS seat, a spreadsheet someone hacked
-together, or a Confluence table that went stale the week it was written.
+## Why this exists
 
-This is four of them, done properly, as static HTML. Open `index.html` and they work — from a
-file on disk, from GitHub Pages, from your intranet, from a USB stick in a meeting room with no
-wifi. There is nothing to install, nothing to log into, and no server that could ever be asked
-to hand over what your team said in a retro.
+Most of what a team needs to organise itself is either a paid SaaS seat, a spreadsheet someone
+hacked together, or a wiki table that went stale the week it was written. This repository is nine of
+those tools, done properly, as plain web pages. Open `index.html` and they work: from a file on
+disk, from GitHub Pages, from your intranet, from a USB stick in a meeting room with no wifi.
+
+The newer half of the toolbox responds to a specific shift. Teams in 2026 work alongside AI
+assistants and coding agents, and the research so far says the hard part is no longer writing code:
+
+- **The bottleneck moved to review and coordination.** A study of 718 companies found coding agents
+  raised pull requests by about 23% while the rate of resolved issues did not move, and the time to
+  merge a pull request rose by roughly half.
+  ([summary](https://complexdiscovery.com/harvard-researchers-find-ai-coding-agents-shifted-the-bottleneck-to-code-review/))
+  Measuring finished work, not activity, is what tells you whether anything improved.
+- **AI amplifies what is already there.** Google's DORA 2025 research describes AI as an amplifier
+  of a team's existing strengths and dysfunctions, and lists *a clear and communicated AI stance*
+  first among the capabilities that make it pay off.
+  ([DORA AI Capabilities Model](https://cloud.google.com/blog/products/ai-machine-learning/introducing-doras-inaugural-ai-capabilities-model))
+- **Individuals speed up faster than teams can coordinate.** Atlassian's *State of Teams 2026* calls
+  this the "fragmentation tax" and names shared context as one of its main remedies.
+  ([report](https://www.atlassian.com/blog/state-of-teams-2026))
+- **Delegation has to be recalibrated.** The author of Delegation Poker argues that agents force
+  teams to "start from scratch in calibrating delegation levels".
+  ([essay](https://jurgenappelo.com/blogs/news/the-revenge-of-command-and-control))
+- **Most practitioners are figuring it out alone.** In Scrum.org's 2026 practitioner survey, 83% use
+  AI but only 15% have had any training on using it in an agile context.
+  ([report](https://www.scrum.org/resources/blog/ai4agile-practitioners-report-2026))
+
+So the toolbox covers both: the ceremonies every team still runs, and the things that now need
+writing down because half the "team" cannot read minds: who may decide what, what "ready" means
+for a task an agent will pick up, why a decision was made, and what the rules for AI actually are.
 
 ## The tools
 
-### 🔁 Retro Board — [`tools/retro/`](tools/retro/)
+### Run the ceremonies
 
-Run the whole retrospective in one tab.
+#### 🔁 Retro Board · [`tools/retro/`](tools/retro/)
 
-- **Four formats**: Start / Stop / Continue, 4 Ls, Sailboat, Mad / Sad / Glad.
-- **Four phases** with facilitation notes built in — Collect, Reveal, Vote, Discuss.
-- **Masked collection**: during Collect, everyone sees their own cards and `•••` for everyone
-  else's. Silent writing stops being an honour system.
-- **Dot voting** with a per-person budget, so the loudest voice does not set the agenda.
-- **Grouping** duplicates into one card, votes added together, instead of debating wording.
-- **Action items with carry-over** — one click pulls every unfinished action from the previous
-  retro into this one. This is the feature that makes retros compound instead of repeat.
-- Drag and drop between columns, a built-in timer, and export to Markdown or JSON.
+Run the whole retrospective in one tab: collect, reveal, vote, discuss.
 
-### ⏱️ Standup Facilitator — [`tools/standup/`](tools/standup/)
+- **Five formats**: Start / Stop / Continue, 4 Ls, Sailboat, Mad / Sad / Glad, and **Humans + Agents**
+  (AI helped · AI cost us · Trust calibration · Try next).
+- **Masked collection**: while collecting, everyone sees their own cards and `•••` for everyone else's.
+- **Dot voting** with a per-person budget, and grouping of duplicates with their votes combined.
+- **Action items with carry-over**: one click pulls every unfinished action from the last retro into
+  this one, so retros compound instead of repeating.
+- Built-in timer, drag and drop, export to Markdown or JSON.
+
+#### ⏱️ Standup Facilitator · [`tools/standup/`](tools/standup/)
 
 - **Randomized speaking order** that never opens with the same person twice in a row.
-- **Per-person timebox** with a countdown ring, optional auto-advance, and a total meeting budget
-  shown before you start.
-- **Blocker capture** during the meeting, categorised as you go, compiled into a digest you can
-  paste straight into your channel.
-- **Async mode** for distributed teams: copy the prompt, collect written updates, generate one
-  digest instead of holding the meeting.
-- **Blocker heatmap** by category across ISO weeks — which part of the system keeps generating
-  friction, over months.
+- **Per-person timebox** with a countdown ring, optional auto-advance and a total meeting budget.
+- **Blocker capture** during the meeting, by category, including *Waiting on review* and
+  *Waiting on AI/agent output*, compiled into a digest you can paste into your channel.
+- **Async mode** for distributed teams: collect written updates and generate one digest.
+- **Blocker heatmap** by category across weeks: which part of the system keeps generating friction.
 
-### 📐 Sprint Capacity Planner — [`tools/capacity/`](tools/capacity/)
-
-The one most teams do badly in a spreadsheet.
-
-- Working days from a real calendar: your working week, company holidays, per-person time off,
-  part-time allocation, and the in-team duties (on-call, interrupt rota) that were never free.
-- **10,000-run Monte Carlo** over *your own* throughput history — bootstrap resampling or a
-  lognormal fit — scaled to the capacity you actually have this sprint.
-- Output is a **range with confidence attached**, not a number: what you can promise at 85%
-  confidence, the coin-flip midpoint, and the stretch nobody should commit to.
-- Answers the question planning actually asks: *"what are the odds we finish 34 points?"*
-- Clone a plan into the next sprint and it carries the team and the history forward.
-
-> It deliberately refuses to print one number. One number becomes a promise, and the promise
-> becomes the thing the team gets held to.
-
-### 🩺 Team Health Radar — [`tools/health-radar/`](tools/health-radar/)
+#### 🩺 Team Health Radar · [`tools/health-radar/`](tools/health-radar/)
 
 An anonymous survey that is anonymous **because there is no service in the middle**.
 
-- Eight default dimensions — psychological safety, delivery confidence, technical quality,
-  collaboration, clarity of purpose, learning, sustainable pace, flow — all editable.
-- Each person answers on their own device and gets a short code like `ATBX-1A2B-4352-3415-7`.
-  They send it to the facilitator however they like.
-- **The code contains the scores, a signature of the question set, and a checksum. Nothing else.**
-  No name, no free text, no timestamp, no device id. Two people who answer identically produce
-  identical codes, which is exactly the property you want.
+- Two question sets: **Classic** (psychological safety, delivery confidence, technical quality and
+  more) and **Humans + AI** (clear AI stance, trust in AI output, review load, shared context, skill
+  growth and more). Both are editable. Share a link ending in `#set=ai` to preselect the second one.
+- Each person answers on their own device and gets a short code like `ATBX-1A2B-4352-3415-7`
+  that contains the scores, a signature of the question set and a checksum. Nothing else.
 - Results **stay hidden until three people have answered**, so a small round cannot be read back
   to an individual.
-- Radar chart with the range of answers shaded, the previous round overlaid, a trend across
-  rounds, and a read-out that points at the lowest scores and the ones people most disagree on.
+- Radar chart with the spread of answers, the previous round overlaid, and a trend across rounds.
+  Disagreement is the interesting signal.
 
-Disagreement is the interesting signal. Two people on the same team living in different
-realities tells you more than any average.
+### Plan and forecast
 
-### 📋 DoD / DoR template library — [`templates/dod-dor/`](templates/dod-dor/)
+#### 📐 Sprint Capacity Planner · [`tools/capacity/`](tools/capacity/)
 
-Forkable Markdown checklists for backend, frontend, platform, data and mobile teams, plus a
-Definition of Ready. Copy one into your repo next to the code, delete every line the team will
-not actually honour, and version-control it. A DoD in a wiki is a document nobody has opened
-since onboarding.
+- Working days from a real calendar: your working week, holidays, time off, part-time allocation,
+  and in-team duties (on-call, interrupt rota) that were never free.
+- **10,000-run Monte Carlo** over your own sprint history, scaled to this sprint's capacity.
+- Output is a **range with a confidence attached**: what you can promise at 85%, the coin-flip
+  midpoint, and the stretch nobody should commit to. It answers *"what are the odds we finish 34
+  points?"*
+- Clone a plan into the next sprint and it carries the team and the history forward.
+
+#### 🌊 Flow Forecaster · [`tools/flow/`](tools/flow/)
+
+Paste a CSV export from Jira, Linear, GitHub, Azure DevOps or a spreadsheet and see where work waits.
+
+- Columns are mapped automatically by header name, and most date formats are understood. Rows that
+  cannot be read are listed with the reason, never silently dropped.
+- **Cycle time** percentiles (50/70/85/95), a scatterplot, weekly throughput, WIP over time and a
+  Little's Law check.
+- **Aging work in progress**: items already older than 85% of everything you finished are flagged
+  while there is still time to act.
+- **Segments**: tag items (for example `agent-assisted` and `human`) and compare them end to end.
+  This is how a team finds out whether AI shortened delivery or just shortened typing.
+- **Forecasts** by Monte Carlo over your daily throughput: *how many items by this date?* and
+  *when will these N items be done?*, each at 50/85/95% confidence.
+- Assignee columns are ignored on purpose. It never breaks data down by person.
+
+### Make the rules explicit
+
+#### 🤝 Working Agreements · [`tools/agreements/`](tools/agreements/)
+
+The team's rules, including the ones for AI, written by the team.
+
+- Guided sections (communication, meetings, work in progress, code review, **AI use and agents**,
+  feedback, learning and on-call, Definition of Done), each with facilitation questions and a library
+  of suggested agreements to adopt or rewrite.
+- **Fist of Five consent check** per agreement, recorded as anonymous counts, with a configurable
+  rule. Anything that fails it is marked *Needs discussion*.
+- **AGENTS.md builder**: setup and test commands, conventions and *Always / Ask first / Never*
+  boundaries filled from what the team agreed. [AGENTS.md](https://agents.md) is the open format
+  that coding agents such as Claude Code, Codex, Cursor, Copilot and Gemini CLI read for project rules.
+- Exports a Markdown agreement, an `AGENTS.md` file, JSON, and a print view for the wall.
+
+#### 🎚️ Delegation Board · [`tools/delegation/`](tools/delegation/)
+
+Who decides what: people, leads and AI agents.
+
+- Each decision gets two levels: a **Delegation Poker** level for people (1 Tell to 7 Delegate,
+  from Management 3.0), and an **agent autonomy** level (0 Off-limits, 1 Suggest, 2 Draft for
+  approval, 3 Act with review before it lands, 4 Act and notify, 5 Autonomous within guardrails).
+- Every decision carries guardrails, a rollback trigger, the evidence that would justify more
+  autonomy, an owner role and a review date.
+- **Poker mode** on a shared screen or passed device: hidden picks, a reveal that shows the spread,
+  and a clear signal when the team disagrees by three levels or more. Only the agreed level is kept.
+- Starter sets for software teams with coding agents, product and discovery, and ops with automation.
+- Warns when anything that sounds irreversible (deploy, delete, production, secrets, payments)
+  is left to an agent without guardrails. Exports a Markdown matrix and an AGENTS.md section.
+
+#### 📝 Task Brief · [`tools/brief/`](tools/brief/)
+
+Write work items a teammate or an AI agent can actually finish.
+
+- Templates per type (feature, bug, spike, refactor, chore) with goal, scope, out of scope,
+  constraints, acceptance criteria, verification steps, risk tier and open questions.
+- **Live readiness check** that explains every verdict: missing verification, vague words in
+  acceptance criteria ("fast", "user-friendly", "should handle"), open questions, a task too big
+  to be small. Each check is tagged with the INVEST letter or Definition of Ready item it serves.
+- Stricter rules when the executor is an agent, and risk tiers that limit agent autonomy.
+- Exports a **Markdown ticket body** for any tracker and an **agent prompt** with a
+  *Stop and ask if* section built from your open questions and risk rules.
+
+#### 🧭 Decision Log · [`tools/decisions/`](tools/decisions/)
+
+Record why, not just what, before the thread scrolls away.
+
+- **Quick capture**: type *"We decided to X because Y"*, press Enter, and it becomes a numbered
+  Proposed record you can expand later.
+- MADR-style records: context, drivers, options with pros and cons, outcome, consequences,
+  confidence, revisit date, and an origin field that includes *AI-proposed, human-accepted*.
+- A **supersede** flow that links old and new decisions both ways, and a reminder when a decision
+  is due for revisit.
+- Exports a single ADR file, the whole log with an index, or a short decision index to paste into
+  `AGENTS.md` or a README so newcomers and agents get the context.
+
+### Templates
+
+#### 📋 Definition of Done / Ready · [`templates/dod-dor/`](templates/dod-dor/)
+
+Forkable Markdown checklists for backend, frontend, platform, data and mobile teams, a Definition of
+Ready, and an **addendum for AI-assisted changes** (ownership, review, generated tests that must fail
+first, what never goes into a prompt). Copy one into your repository, delete every line your team
+will not honour, and version-control it.
+
+## How the tools fit together
+
+You do not need all nine. Most teams start with one ceremony tool and add the rest when a problem
+shows up. A few combinations work especially well:
+
+| If your team... | Try |
+|---|---|
+| keeps repeating the same retro actions | **Retro Board** carry-over, then a **Decision Log** entry for anything you settle |
+| is adopting coding agents | **Working Agreements** (AI section) → **Delegation Board** → paste both exports into `AGENTS.md` |
+| hands tickets to agents that come back wrong | **Task Brief** before the work starts, the **AI-assisted DoD** after |
+| is asked "when will it be done?" | **Flow Forecaster** for a date range, **Capacity Planner** for the next sprint |
+| feels busier but not faster | **Flow Forecaster** segments plus the **Humans + AI** health check |
 
 ## Quick start
 
-**Option 1 — just open it.** Download the repo, double-click `index.html`. Everything works from
-`file://`; there is no build step and no module loading to trip over.
+**Option 1: just open it.** Download the repository and double-click `index.html`. Everything works
+from `file://`: no build step, no server, no login.
 
 ```bash
 git clone https://github.com/USER/agile-toolbox.git
 cd agile-toolbox
-xdg-open index.html      # macOS: open index.html   ·   Windows: start index.html
+# then open index.html in your browser
 ```
 
-**Option 2 — serve it locally**, which additionally enables the offline cache and clipboard API:
+On Windows you can also run `start index.html` in PowerShell or cmd; on macOS, `open index.html`.
 
-```bash
-python3 -m http.server 8080
-# then visit http://localhost:8080
-```
+**Option 2: host it for your team.** Any static file host works. A GitHub Pages workflow is included
+([`.github/workflows/pages.yml`](.github/workflows/pages.yml)): enable Pages with the source set to
+*GitHub Actions* and push. There are no API keys, environment variables or secrets.
 
-**Option 3 — GitHub Pages.** Settings → Pages → deploy from `main`, root folder. A workflow is
-included at [`.github/workflows/pages.yml`](.github/workflows/pages.yml) if you prefer Actions.
-Nothing needs configuring: no API keys, no environment variables, no secrets.
+**Option 3: install it as an app.** Served over HTTPS (or `localhost`), your browser offers to
+install it. It then opens in its own window and works with no network at all.
 
-**Option 4 — install it as an app.** Served over HTTPS (or localhost), your browser will offer to
-install it. It then opens in its own window and works with no network at all — built for the
-conference room where the wifi is a rumour.
-
-## The privacy model
-
-This is the part worth understanding before you use it with a real team.
+## Your data stays with you
 
 | Where your data lives | What that means |
 |---|---|
-| `localStorage`, under the `atbx:` prefix | It is per-browser and per-origin. A different browser or a different machine sees nothing. |
-| Nowhere else | There are no network calls in this codebase — no analytics, no fonts, no CDN, no telemetry. Grep for `fetch(` and you will find one call, in the service worker, for the app's own files. |
-| Until you export or erase it | The hub page has a **Back up everything** button (one JSON file, all tools) and an **Erase all local data** button. Clearing your browser's site data does the same. |
+| Your browser's `localStorage` | It is per browser and per site. A different browser or machine sees nothing. |
+| Nowhere else | No analytics, no web fonts, no CDN, no telemetry, no network calls. The only `fetch` in the codebase is the service worker caching the app's own files. |
+| Until you export or erase it | The home page has **Back up everything** (one JSON file for all tools) and **Erase all local data**. |
 
 Two consequences to plan around:
 
-- **Clearing site data deletes your boards.** Export anything you would be upset to lose.
-- **Sharing means exporting.** There is no live multiplayer, because live multiplayer needs a
-  server, and a server is the thing this design is avoiding. In practice one person facilitates
-  and shares the screen, or people work in parallel and exchange JSON.
+- **Clearing site data deletes your work.** Export anything you would be upset to lose.
+- **Sharing means exporting.** There is no live multiplayer, because that needs a server. In
+  practice one person facilitates and shares the screen, or people exchange exported files.
 
-### Why no individual metrics — ever
+### Why no individual metrics, ever
 
-This is a design constraint, not an oversight, and it applies to any tool added here:
+This is a design rule for every tool, current and future:
 
-- Standup turn timings are shown **live** so the facilitator can keep the meeting inside its box.
-  They are **never written to history**.
-- Blockers aggregate by **category**, not by who raised them.
-- Capacity inputs (allocation, days off, other duties) describe *availability*, never productivity.
-- The health radar cannot attribute a response to a person, even by the facilitator, even with the
-  raw export.
+- Standup turn timings are shown live to keep the meeting in its box. They are **never stored**.
+- Blockers aggregate by **category**, never by who raised them.
+- The Flow Forecaster **ignores assignee columns** in your export.
+- Delegation Poker and Fist of Five keep **only the result and anonymous counts**, never who voted what.
+- The Health Radar cannot attribute a response to a person, even with the raw export.
 
-The moment a facilitation tool can be turned into a performance report, people start managing
-their answers instead of giving them. Everything above exists to keep that door closed.
+The moment a team tool can be turned into a performance report, people start managing their answers
+instead of giving them.
 
-## Design constraints
+## What this is not
 
-Read these before opening a PR — they explain most of the "why not just use React" questions.
-
-1. **No build step.** Plain HTML, CSS and ES5-flavoured JavaScript with classic `<script>` tags.
-   A scrum master should be able to fork this, change a string, and refresh. No `npm install`,
-   no toolchain to rot in two years.
-2. **No dependencies.** Zero. The charts are hand-drawn canvas, the layout is CSS grid, the
-   radar maths is forty lines. Nothing to audit, nothing to update, no supply chain.
-3. **Must work from `file://`.** That is why there are no ES modules — the browser's CORS rules
-   block them off the file system, and "download the zip and open it" has to keep working.
-4. **Theme-aware and accessible.** Light, dark and system, driven by CSS custom properties in one
-   stylesheet. Keyboard-operable, labelled, AA contrast in both themes.
-5. **Everything exports.** Markdown for humans and tickets, JSON for round-tripping. No lock-in
-   to a tool that has no company behind it.
-
-## Project layout
-
-```
-agile-toolbox/
-├── index.html                  hub: tool launcher, backup/restore, storage stats
-├── manifest.json  sw.js        PWA: installable, offline app shell
-├── assets/
-│   ├── css/app.css             the whole design system — tokens, components, light/dark
-│   ├── js/store.js             localStorage wrapper, backup/restore, memory fallback
-│   └── js/ui.js                shared helpers: chrome, theme, toasts, dates, exports
-├── tools/
-│   ├── retro/                  index.html + retro.js
-│   ├── standup/                index.html + standup.js
-│   ├── capacity/               index.html + capacity.js
-│   └── health-radar/           index.html + radar.js
-└── templates/dod-dor/          forkable Definition of Done / Ready checklists
-```
-
-Each tool is **one folder, two files**, sharing `app.css`, `store.js` and `ui.js`. That is the
-whole architecture. Adding a fifth tool means copying the pattern — see
-[CONTRIBUTING.md](CONTRIBUTING.md).
+It is not a tracker and does not integrate with one. It sits between "we need to run this well" and
+"we need this recorded in Jira": you facilitate and decide here, then paste the Markdown export
+wherever your work lives.
 
 ## Roadmap
 
-Sized to be picked up by someone who has never touched the repo. Every one of these is a folder
-and two files:
+Ideas sized for a first contribution. Each one is a folder and two files:
 
-- **Cross-team dependency tracker** — log "team A needs team B to deliver X by date Y", draw the
-  graph, flag it when a date slips. The Confluence table this replaces went stale in a week.
-- **Interactive ceremony playbook** — facilitation scripts, timings, anti-patterns and a timer per
-  ceremony. Most useful thing you can hand a new scrum master.
-- **Refinement helper** — planning-poker-style estimation for a co-located or screen-shared team,
-  with reference stories and a "why are we 3 points apart" prompt.
-- **Working agreement builder** — a guided set of prompts that ends in a Markdown agreement the
-  team actually wrote themselves.
-- **Impediment escalation log** — ageing impediments, escalation paths, and the evidence you need
-  to make the case upward.
-- **i18n string tables** — the UI is English-only today; the strings are not extracted yet.
-
-Ideas and bug reports are as welcome as code. If you facilitate for a living and something here
-gets in your way, that is a bug worth filing.
+- **Cross-team dependency tracker**: "team A needs X from team B by date Y", drawn as a graph, flagged when a date slips.
+- **Ceremony playbook**: facilitation scripts, timings and anti-patterns per ceremony, for new scrum masters.
+- **Pass-the-device estimation**: planning poker for a co-located or screen-shared team, with a "why are we 3 points apart" prompt.
+- **Impediment escalation log**: ageing impediments, escalation paths and the evidence to make the case upward.
+- **Blameless incident review guide**: a timeline and the questions, ending in actions and a Decision Log entry.
+- **Translations**: the interface is English only today.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Short version: no build step, no dependencies, keep it
-working from `file://`, and never add anything that reports on an individual.
-
-## A note on what this is not
-
-This is not a replacement for a tracker, and it does not integrate with one. It sits in the gap
-between "we need to run this ceremony well" and "we need this recorded in Jira" — you facilitate
-here, then paste the Markdown export wherever your work actually lives.
+Bug reports from people who facilitate for a living are as valuable as code. Read
+[CONTRIBUTING.md](CONTRIBUTING.md) for the five constraints (no build step, no dependencies, works
+from `file://`, never measure an individual, everything exports) and how to add a tool.
 
 ## License
 
-[MIT](LICENSE). Use it at work, fork it for your company, strip out what you do not need. If it
-saves your team an afternoon, that is the whole point.
+[MIT](LICENSE). Use it at work, fork it for your company, remove what you do not need.
 
 <!--
 Publishing your own copy: replace USER/agile-toolbox in the Quick start clone URL with your

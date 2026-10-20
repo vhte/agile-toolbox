@@ -1,4 +1,4 @@
-# Definition of Done — Frontend / Web UI
+# Definition of Done: Frontend / Web UI
 
 > Done means **releasable**. Fork it, cut what your team will not honour, agree on the rest line by line.
 
@@ -12,7 +12,7 @@
 
 ## Behaviour
 
-- [ ] **Loading, empty, error and partial states** are all designed and implemented — not just the populated one.
+- [ ] **Loading, empty, error and partial states** are all designed and implemented: not just the populated one.
 - [ ] Failures are recoverable: the user is told what happened and what to do, and can retry.
 - [ ] Forms preserve input on failure. Nobody retypes anything because of a server error.
 - [ ] Destructive actions are confirmable or undoable.
@@ -25,7 +25,7 @@
 - [ ] Semantic elements used before ARIA; ARIA used correctly where it is needed.
 - [ ] Contrast meets WCAG AA in **every theme you ship**, including dark mode.
 - [ ] Images and icon-only buttons have text alternatives; decorative ones are hidden from readers.
-- [ ] Checked once with a screen reader or an automated audit — and the findings were acted on.
+- [ ] Checked once with a screen reader or an automated audit, and the findings were acted on.
 
 ## Responsive and cross-browser
 

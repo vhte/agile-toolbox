@@ -1,7 +1,7 @@
 {
   "name": "Agile Toolbox",
   "short_name": "Agile Toolbox",
-  "description": "Retrospectives, standups, capacity forecasting and team health surveys — entirely in your browser, with no backend.",
+  "description": "Browser-only tools for teams of people and AI agents: retros, standups, health checks, capacity and flow forecasts, delegation, task briefs, decision logs and working agreements. No backend, no install.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -9,15 +9,47 @@
   "background_color": "#f6f7f9",
   "theme_color": "#4f46e5",
   "icons": [
-    { "src": "./assets/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "./assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "./assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "./assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Retro Board", "url": "./tools/retro/index.html" },
-    { "name": "Standup Facilitator", "url": "./tools/standup/index.html" },
-    { "name": "Capacity Planner", "url": "./tools/capacity/index.html" },
-    { "name": "Team Health Radar", "url": "./tools/health-radar/index.html" }
+    {
+      "name": "Retro Board",
+      "url": "./tools/retro/index.html"
+    },
+    {
+      "name": "Standup Facilitator",
+      "url": "./tools/standup/index.html"
+    },
+    {
+      "name": "Flow Forecaster",
+      "url": "./tools/flow/index.html"
+    },
+    {
+      "name": "Task Brief",
+      "url": "./tools/brief/index.html"
+    }
   ]
 }

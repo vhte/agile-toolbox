@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Working Agreements · Agile Toolbox</title>
+<meta name="description" content="Write your team's working agreements, including the rules for AI tools and coding agents, check consent with Fist of Five, and export a team agreement plus an AGENTS.md file.">
+<link rel="icon" href="../../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="../../manifest.json">
+<link rel="stylesheet" href="../../assets/css/app.css">
+<style>
+  .toolbar { align-items: flex-end; }
+  .toolbar .field { flex: 1 1 220px; max-width: 320px; }
+
+  .meta-grid { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .meta-grid .field--wide { grid-column: 1 / -1; }
+
+  .summary { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: var(--sp-1); border-bottom: 1px solid var(--border); margin: var(--sp-5) 0 var(--sp-4); }
+  .tab {
+    font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--text-2);
+    background: transparent; border: 0; border-bottom: 2px solid transparent;
+    padding: 8px 12px; margin-bottom: -1px; cursor: pointer;
+  }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .prompts { margin: 0 0 var(--sp-3); padding: var(--sp-3) var(--sp-4); background: var(--surface-2); border-radius: var(--radius-sm); }
+  .prompts ul { margin: var(--sp-1) 0 0; padding-left: 1.2em; color: var(--text-2); font-size: 0.88rem; }
+
+  .items { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .item {
+    border: 1px solid var(--border); border-left: 4px solid var(--info);
+    border-radius: var(--radius-sm); padding: var(--sp-3); background: var(--surface);
+    display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0;
+  }
+  .item--Agreed { border-left-color: var(--ok); }
+  .item--Dropped { border-left-color: var(--border-strong); opacity: 0.75; }
+  .item--discuss { border-left-color: var(--warn); }
+  .item__text { font-size: 0.92rem; overflow-wrap: anywhere; overflow-y: hidden; resize: none; }
+  .item__row { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+  .item__row select { width: auto; }
+  .item__why { flex: 1 1 200px; }
+  .item__tags { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+
+  #doc-heading { overflow-wrap: anywhere; }
+  .consent { border-top: 1px dashed var(--border); padding-top: var(--sp-2); }
+  .fist { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-2); margin: var(--sp-2) 0; }
+  @media (max-width: 560px) { .fist { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .fist__cell {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: var(--sp-2) var(--sp-1); background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+  }
+  .fist__cell--low { background: var(--danger-soft); }
+  .fist__label { font-size: 0.72rem; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.04em; }
+  .fist__count { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .fist__btns { display: flex; gap: 4px; }
+  .fist__btns .btn { width: 28px; height: 28px; padding: 0; }
+  .consent__result { font-size: 0.86rem; }
+  .consent__ask { padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background: var(--warn-soft); color: var(--warn); font-size: 0.86rem; margin-top: var(--sp-2); }
+
+  .suggestions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .suggestion {
+    font: inherit; font-size: 0.82rem; text-align: left; white-space: normal;
+    color: var(--text); background: var(--surface-2);
+    border: 1px dashed var(--border-strong); border-radius: var(--radius-sm);
+    padding: 5px 9px; cursor: pointer; max-width: 100%; overflow-wrap: anywhere;
+  }
+  .suggestion:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+  .agents-grid { display: grid; gap: var(--sp-4); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 940px) { .agents-grid { grid-template-columns: minmax(0, 1fr); } }
+  .agents-preview { position: sticky; top: 72px; }
+  input.mono { font-family: var(--font-mono); }
+
+  pre.preview {
+    margin: 0; padding: var(--sp-3) var(--sp-4);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.5;
+    white-space: pre-wrap; overflow-wrap: anywhere; max-height: 70vh; overflow: auto; color: var(--text);
+  }
+
+  .empty h2 { color: var(--text); margin-bottom: var(--sp-2); }
+  .empty .btn-row { justify-content: center; margin-top: var(--sp-4); }
+
+  details.howto { margin-top: var(--sp-4); }
+  details.howto summary { cursor: pointer; font-weight: 600; }
+  details.howto .card__body { font-size: 0.9rem; color: var(--text-2); }
+  details.howto li { margin-bottom: var(--sp-1); }
+
+  #print-view { display: none; }
+  #print-view h1 { margin-bottom: var(--sp-2); }
+  #print-view h2 { margin: var(--sp-5) 0 var(--sp-2); }
+  #print-view li { margin-bottom: 4px; }
+  #print-view .why { color: var(--text-2); font-size: 0.9em; }
+
+  @media print {
+    main.wrap > *:not(#print-view) { display: none !important; }
+    #print-view { display: block !important; color: #000; }
+    #print-view .why { color: #444; }
+    #toasts { display: none !important; }
+  }
+</style>
+</head>
+<body data-title="Working Agreements" data-root="../../">
+
+<main class="wrap">
+
+  <div class="row toolbar mb-3 no-print">
+    <div class="field">
+      <label class="label" for="doc-select">Agreement</label>
+      <select id="doc-select"></select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn--primary" id="new-doc" type="button">New agreement</button>
+      <button class="btn" id="rename-doc" type="button">Rename</button>
+      <button class="btn" id="dup-doc" type="button">Duplicate</button>
+      <button class="btn btn--danger" id="delete-doc" type="button">Delete</button>
+    </div>
+    <div class="topbar__spacer"></div>
+    <div class="btn-row">
+      <button class="btn" id="load-example" type="button">Load an example</button>
+      <button class="btn" id="export-json" type="button">Export JSON</button>
+      <button class="btn" id="import-json" type="button">Import JSON</button>
+    </div>
+  </div>
+
+  <div id="empty" class="empty hidden">
+    <h2>Working agreements, written by the team</h2>
+    <p>Write down how your team works together, including how you use AI tools and coding agents, one agreement at a time.
+      Check consent with Fist of Five, then export a team agreement for the wall and an AGENTS.md file for your repository.</p>
+    <div class="btn-row">
+      <button class="btn btn--primary" id="empty-example" type="button">Load an example</button>
+      <button class="btn" id="empty-new" type="button">Start a blank agreement</button>
+    </div>
+  </div>
+
+  <div id="tool" class="hidden">
+    <div class="card">
+      <div class="card__head">
+        <h2 id="doc-heading">Team</h2>
+        <span class="tag tag--warn hidden" id="review-due">Review due</span>
+      </div>
+      <div class="card__body stack">
+        <div class="meta-grid">
+          <div class="field">
+            <label class="label" for="team">Team name</label>
+            <input type="text" id="team" maxlength="120">
+          </div>
+          <div class="field">
+            <label class="label" for="reviewed">Last reviewed</label>
+            <input type="date" id="reviewed">
+          </div>
+          <div class="field">
+            <label class="label" for="next-review">Next review</label>
+            <input type="date" id="next-review">
+          </div>
+          <div class="field">
+            <label class="label" for="rule">Consent rule</label>
+            <select id="rule">
+              <option value="no01">Nobody shows 0 or 1</option>
+              <option value="avg3">Average is 3 or more</option>
+            </select>
+          </div>
+          <div class="field field--wide">
+            <label class="label" for="purpose">Purpose (one sentence)</label>
+            <input type="text" id="purpose" maxlength="300" placeholder="Why this team exists and what these agreements protect.">
+          </div>
+        </div>
+        <div class="row between items-center">
+          <div class="summary" id="summary" aria-live="polite"></div>
+          <button class="btn btn--sm" id="mark-reviewed" type="button">Mark reviewed today</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" type="button" id="tab-agreement" aria-controls="panel-agreement" data-tab="agreement">Agreement</button>
+      <button class="tab" role="tab" type="button" id="tab-agents" aria-controls="panel-agents" data-tab="agents">AGENTS.md</button>
+      <button class="tab" role="tab" type="button" id="tab-export" aria-controls="panel-export" data-tab="export">Export &amp; print</button>
+    </div>
+
+    <section id="panel-agreement" role="tabpanel" aria-labelledby="tab-agreement">
+      <div class="stack" id="sections"></div>
+    </section>
+
+    <section id="panel-agents" role="tabpanel" aria-labelledby="tab-agents" class="hidden">
+      <p class="hint mb-3">AGENTS.md is plain Markdown with no required schema: coding agents (Claude Code, Codex, Cursor, Copilot, Gemini CLI and others)
+        read the nearest AGENTS.md in the directory tree, so a subfolder can have its own. Keep it short and imperative.</p>
+      <div class="agents-grid">
+        <div class="card">
+          <div class="card__head"><h2>Builder</h2></div>
+          <div class="card__body stack">
+            <div class="field">
+              <label class="label" for="ag-overview">Project overview (one paragraph)</label>
+              <textarea id="ag-overview" rows="3" placeholder="What this repository is, who uses it, and the main technologies."></textarea>
+            </div>
+            <div class="meta-grid">
+              <div class="field">
+                <label class="label" for="ag-setup">Setup command</label>
+                <input type="text" class="mono" id="ag-setup" placeholder="npm ci">
+              </div>
+              <div class="field">
+                <label class="label" for="ag-build">Build command</label>
+                <input type="text" class="mono" id="ag-build" placeholder="npm run build">
+              </div>
+              <div class="field">
+                <label class="label" for="ag-test">Test command</label>
+                <input type="text" class="mono" id="ag-test" placeholder="npm test">
+              </div>
+              <div class="field">
+                <label class="label" for="ag-lint">Lint command</label>
+                <input type="text" class="mono" id="ag-lint" placeholder="npm run lint">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="ag-style">Code style and conventions</label>
+              <textarea id="ag-style" rows="3" placeholder="One rule per line, e.g. TypeScript strict mode. Prefer small pure functions."></textarea>
+            </div>
+            <div class="field">
+              <label class="label" for="ag-layout">Repository layout notes</label>
+              <textarea id="ag-layout" rows="3" placeholder="One per line, e.g. src/api: HTTP handlers. Tests live next to the code."></textarea>
+            </div>
+            <div class="field">
+              <label class="label" for="ag-pr">PR and commit conventions</label>
+              <textarea id="ag-pr" rows="3" placeholder="One per line, e.g. Title format: [TICKET-123] Short summary."></textarea>
+            </div>
+            <div class="field">
+              <div class="row between items-center">
+                <span class="label">Boundaries</span>
+                <button class="btn btn--sm" id="ag-refill" type="button">Refill from agreed items</button>
+              </div>
+              <span class="hint" id="ag-bound-hint"></span>
+            </div>
+            <div class="field">
+              <label class="label" for="ag-always">Always</label>
+              <textarea id="ag-always" rows="3"></textarea>
+            </div>
+            <div class="field">
+              <label class="label" for="ag-ask">Ask first</label>
+              <textarea id="ag-ask" rows="2"></textarea>
+            </div>
+            <div class="field">
+              <label class="label" for="ag-never">Never</label>
+              <textarea id="ag-never" rows="3"></textarea>
+            </div>
+            <p class="hint" id="ag-delegation-hint">Need per-decision approval levels for agents (merge, deploy, triage)? Build them in the
+              <a href="../delegation/index.html">Delegation Board</a> and paste its "## Autonomy and approvals" section at the end of this file, after Boundaries.</p>
+          </div>
+        </div>
+        <div class="card agents-preview">
+          <div class="card__head">
+            <h2>Preview</h2>
+            <button class="btn btn--sm" id="ag-copy" type="button">Copy</button>
+            <button class="btn btn--sm btn--primary" id="ag-download" type="button">Download AGENTS.md</button>
+          </div>
+          <div class="card__body">
+            <pre class="preview" id="ag-preview"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-export" role="tabpanel" aria-labelledby="tab-export" class="hidden">
+      <div class="card">
+        <div class="card__head">
+          <h2>Team agreement</h2>
+          <label class="check"><input type="checkbox" id="include-proposed"> Include Proposed items</label>
+        </div>
+        <div class="card__body stack">
+          <div class="btn-row">
+            <button class="btn btn--primary" id="md-download" type="button">Download Markdown</button>
+            <button class="btn" id="md-copy" type="button">Copy Markdown</button>
+            <button class="btn" id="print" type="button">Print or save as PDF</button>
+          </div>
+          <p class="hint">Dropped items are never exported. Proposed items are left out unless you tick the box, so the wall only shows what the team agreed.</p>
+          <pre class="preview" id="md-preview"></pre>
+        </div>
+      </div>
+    </section>
+
+    <details class="card howto no-print">
+      <summary class="card__head">How to use this</summary>
+      <div class="card__body">
+        <ol>
+          <li><strong>Work section by section.</strong> Read the prompt questions aloud and let people write silently for two minutes before anyone speaks (the "1-2-4-All" pattern from Liberating Structures). Suggestions are a starting point: add one, then rewrite it in the team's own words.</li>
+          <li><strong>Check consent with Fist of Five.</strong> Everyone shows 0 to 5 fingers at the same time. Tap how many people showed each value; no names are recorded. With the default rule, an item is agreed when nobody shows 0 or 1. If it fails, ask "what would make it a 3 for you?", edit the wording and check again. This is consent, not consensus: "good enough for now, safe enough to try", as sociocracy puts it.</li>
+          <li><strong>Write down your AI stance.</strong> DORA's 2025 AI Capabilities Model names a clear and communicated AI stance as a foundation for AI helping delivery rather than hurting it. Agree which tools are approved, what never goes into a prompt, and who is accountable for generated code.</li>
+          <li><strong>Hand the rules to your agents.</strong> The AGENTS.md tab turns agreed AI and code review items into Boundaries (Always, Ask first, Never) next to your build and test commands. Commit the file at the root of the repository.</li>
+          <li><strong>Revisit.</strong> Working agreements (as described by Esther Derby and Diana Larsen in "Agile Retrospectives") only work if they stay alive. Review them every quarter or when the team changes, and drop what nobody follows.</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+
+  <article id="print-view" aria-hidden="true"></article>
+</main>
+
+<div id="toasts"></div>
+
+<script src="../../assets/js/store.js"></script>
+<script src="../../assets/js/ui.js"></script>
+<script src="./agreements.js"></script>
+</body>
+</html>

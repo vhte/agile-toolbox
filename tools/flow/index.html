@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow Forecaster · Agile Toolbox</title>
+<meta name="description" content="Paste a CSV export from any tracker and get cycle time percentiles, throughput, WIP, aging work and Monte Carlo forecasts of how many items and when, all in your browser.">
+<link rel="icon" href="../../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="../../manifest.json">
+<link rel="stylesheet" href="../../assets/css/app.css">
+<style>
+  .toolbar { align-items: flex-end; }
+  .toolbar .field { flex: 0 1 260px; }
+
+  .howto summary, .data-card > summary { cursor: pointer; padding: var(--sp-3) var(--sp-4); font-weight: 650; }
+  .howto[open] summary, .data-card[open] > summary { border-bottom: 1px solid var(--border); }
+  .howto .card__body p:last-child, .howto .card__body ul:last-child { margin-bottom: 0; }
+  .howto ul { margin: 0 0 var(--sp-3); padding-left: 1.2em; }
+  .howto li { margin-bottom: 4px; }
+
+  .hero { padding: var(--sp-6) var(--sp-4); text-align: center; }
+  .hero p { max-width: 640px; margin: 0 auto var(--sp-4); color: var(--text-2); }
+  .hero .btn-row { justify-content: center; }
+
+  textarea#raw { min-height: 150px; font-family: var(--font-mono); font-size: 0.8rem; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
+  .map-grid { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+  .note { padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); font-size: 0.85rem; border: 1px solid transparent; overflow-wrap: anywhere; }
+  .note--warn { background: var(--warn-soft); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
+  .note--info { background: var(--info-soft); color: var(--info); border-color: color-mix(in srgb, var(--info) 30%, transparent); }
+  .note--danger { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+
+  .stats-grid { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .two-col { display: grid; gap: var(--sp-4); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: minmax(0, 1fr); } }
+
+  canvas.chart { width: 100%; height: 230px; display: block; }
+  .pct-table td.num { font-weight: 650; }
+  .pct-table td.reads { min-width: 190px; }
+  .swatch { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+
+  .fc-out { display: grid; gap: var(--sp-2); grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); }
+  .fc-out .stat { padding: var(--sp-2) var(--sp-3); }
+  .fc-out .stat__value { font-size: 1.15rem; overflow-wrap: anywhere; }
+  .fc-inputs { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+  .aging-title { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .table-scroll.tall { max-height: 340px; overflow-y: auto; }
+  .little { font-size: 0.88rem; color: var(--text-2); }
+  .little strong { color: var(--text); }
+  #md-text { min-height: 320px; font-family: var(--font-mono); font-size: 0.8rem; }
+</style>
+</head>
+<body data-title="Flow Forecaster" data-root="../../">
+
+<main class="wrap wrap--wide">
+
+  <div class="row toolbar mb-3" id="toolbar">
+    <div class="field">
+      <label class="label" for="ds-select">Dataset</label>
+      <select id="ds-select"></select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn--primary" id="new-dataset" type="button">New dataset</button>
+      <button class="btn" id="open-file" type="button">Open CSV file</button>
+      <input type="file" id="file-input" class="hidden" accept=".csv,.tsv,.txt,text/csv,text/plain" aria-label="CSV file">
+      <button class="btn" id="rename-dataset" type="button">Rename</button>
+      <button class="btn" id="dup-dataset" type="button">Duplicate</button>
+      <button class="btn btn--danger" id="delete-dataset" type="button">Delete</button>
+    </div>
+    <div class="topbar__spacer"></div>
+    <div class="btn-row">
+      <button class="btn" id="export-md" type="button">Markdown</button>
+      <button class="btn" id="export-json" type="button">Export JSON</button>
+      <button class="btn" id="import-json" type="button">Import</button>
+      <button class="btn" id="copy-ct" type="button">Copy CSV of cycle times</button>
+    </div>
+  </div>
+
+  <!-- ===================== EMPTY STATE ===================== -->
+  <section class="card hero mb-4 hidden" id="empty">
+    <h1 class="mb-3">Forecast from finished work, not from estimates</h1>
+    <p>
+      Flow Forecaster turns a CSV export from Jira, Linear, GitHub or any tracker into cycle time
+      percentiles, throughput, WIP and aging work, so you can see where items actually wait.
+      It then runs a Monte Carlo simulation on your own history to answer "how many by this date?"
+      and "when will these be done?" as ranges with a confidence level.
+    </p>
+    <div class="btn-row">
+      <button class="btn btn--primary btn--lg" id="load-example" type="button">Load an example</button>
+      <button class="btn btn--lg" id="paste-own" type="button">Paste your own data</button>
+    </div>
+    <p class="hint mt-4">Everything stays in this browser. Nothing is uploaded.</p>
+  </section>
+
+  <!-- ===================== WORKSPACE ===================== -->
+  <div class="stack hidden" id="workspace">
+
+    <details class="card data-card" id="data-card" open>
+      <summary>Data and columns</summary>
+      <div class="card__body stack">
+        <div class="field">
+          <label class="label" for="raw">CSV or TSV text (first row is the header)</label>
+          <textarea id="raw" spellcheck="false" placeholder="Key,Summary,Started,Resolved&#10;ABC-1,Login page,2026-03-02,2026-03-06"></textarea>
+          <span class="hint">Paste an export, or use "Open CSV file". Comma, semicolon and tab delimiters are detected automatically.</span>
+        </div>
+        <div class="map-grid" id="map-grid"></div>
+        <div id="data-notes" class="stack" role="status" aria-live="polite" style="gap: var(--sp-2);"></div>
+      </div>
+    </details>
+
+    <div class="card">
+      <div class="card__body row" style="align-items: flex-end;">
+        <div class="field" style="flex: 1 1 180px;">
+          <label class="label" for="seg-filter">Segment filter (applies to everything)</label>
+          <select id="seg-filter"></select>
+        </div>
+        <div class="field" style="flex: 1 1 170px;">
+          <label class="label" for="window">History window</label>
+          <select id="window">
+            <option value="4">Last 4 weeks</option>
+            <option value="8">Last 8 weeks</option>
+            <option value="12">Last 12 weeks</option>
+            <option value="26">Last 26 weeks</option>
+            <option value="0">All history</option>
+          </select>
+        </div>
+        <div class="field" style="flex: 1 1 170px;">
+          <label class="label" for="asof-date">As of (ages and forecasts)</label>
+          <div class="flex gap-2 items-center">
+            <input type="date" id="asof-date" aria-describedby="asof">
+            <button class="btn btn--sm btn--ghost" id="asof-today" type="button">Today</button>
+          </div>
+        </div>
+        <label class="check" style="flex: 1 1 200px; padding-bottom: 8px;">
+          <input type="checkbox" id="weekends"> Exclude weekends (history and forecast)
+        </label>
+        <p class="hint" id="asof" style="flex: 1 1 100%; margin: 0;"></p>
+        <div id="asof-note" style="flex: 1 1 100%;" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="empty hidden" id="no-items">
+      Map a start and a done column to a dataset with at least one valid row to see metrics.
+    </div>
+
+    <div class="stack" id="results">
+      <div class="stats-grid" id="stats" aria-live="polite"></div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card__head"><h2>Cycle time</h2></div>
+          <div class="card__body stack">
+            <canvas class="chart" id="ct-chart" height="240" role="img" aria-label="Cycle time scatterplot"></canvas>
+            <div class="table-scroll">
+              <table class="data pct-table" id="pct-table"></table>
+            </div>
+            <p class="hint" style="margin: 0;">
+              Cycle time is counted in calendar days from start to done, inclusively: an item started
+              and finished on the same day took 1 day (the Kanban Guide and ProKanban convention).
+              Percentiles use the <strong>nearest-rank method</strong>: sort the cycle times and take
+              the value at position ceil(p × n). "85%: 9 days" reads as "85% of finished items took
+              9 days or less".
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>Throughput per week</h2></div>
+          <div class="card__body stack">
+            <canvas class="chart" id="tp-chart" height="240" role="img" aria-label="Weekly throughput bar chart"></canvas>
+            <p class="hint" style="margin: 0;">Items finished per ISO week (Monday to Sunday), including weeks where nothing finished.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card__head"><h2>Work in progress</h2></div>
+          <div class="card__body stack">
+            <canvas class="chart" id="wip-chart" height="220" role="img" aria-label="WIP over time line chart"></canvas>
+            <p class="little" id="little" style="margin: 0;"></p>
+            <p class="hint" style="margin: 0;">An item counts as WIP on every day from its start to its done date, inclusive, which keeps this chart consistent with the cycle time convention.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>Aging work in progress</h2><span class="tag" id="aging-count">0</span></div>
+          <div class="card__body stack">
+            <div class="table-scroll tall"><table class="data" id="aging-table"></table></div>
+            <p class="hint" style="margin: 0;">
+              Age counts like cycle time (start to the as-of date, inclusive). Amber: older than 70% of
+              everything finished. Red: older than 85% of everything finished. Swarm on the red ones first.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card hidden" id="seg-card">
+        <div class="card__head"><h2>Segments</h2></div>
+        <div class="card__body stack">
+          <div class="table-scroll"><table class="data" id="seg-table"></table></div>
+          <p class="hint" style="margin: 0;">
+            Tag items as "agent-assisted" or "human" (a label or a custom field) and compare them here.
+            AI agents tend to raise code volume while review and coordination become the bottleneck,
+            so judge them on end-to-end cycle time of finished items, not on coding speed.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><h2>Monte Carlo forecasts</h2><span class="tag" id="fc-basis"></span></div>
+        <div class="card__body stack">
+          <p class="hint" style="margin: 0;">
+            10,000 simulated futures, each day drawn at random from your daily throughput inside the
+            history window (zero days included). It needs at least about 10 finished items in the window
+            to say anything useful.
+          </p>
+          <div id="fc-warn"></div>
+          <div class="two-col">
+            <div class="stack">
+              <h3>How many items by a date?</h3>
+              <div class="fc-inputs">
+                <div class="field">
+                  <label class="label" for="hm-date">Finish line (inclusive)</label>
+                  <input type="date" id="hm-date">
+                </div>
+              </div>
+              <div class="fc-out" id="hm-out" aria-live="polite">
+                <div class="stat"><div class="stat__label">50%</div><div class="stat__value" id="hm-50">—</div><div class="stat__sub">items or more</div></div>
+                <div class="stat"><div class="stat__label">85%</div><div class="stat__value" id="hm-85">—</div><div class="stat__sub">items or more</div></div>
+                <div class="stat"><div class="stat__label">95%</div><div class="stat__value" id="hm-95">—</div><div class="stat__sub">items or more</div></div>
+              </div>
+              <p class="hint" id="hm-note" style="margin: 0;"></p>
+              <canvas class="chart" id="hm-chart" height="200" role="img" aria-label="Distribution of items finished by the date"></canvas>
+            </div>
+            <div class="stack">
+              <h3>When will N items be done?</h3>
+              <div class="fc-inputs">
+                <div class="field">
+                  <label class="label" for="when-n">Items</label>
+                  <input type="number" id="when-n" min="1" max="5000" step="1">
+                </div>
+                <div class="field">
+                  <label class="label" for="when-start">Starting on</label>
+                  <input type="date" id="when-start">
+                </div>
+              </div>
+              <div class="fc-out" id="when-out" aria-live="polite">
+                <div class="stat"><div class="stat__label">50%</div><div class="stat__value" id="when-50">—</div><div class="stat__sub">on or before</div></div>
+                <div class="stat"><div class="stat__label">85%</div><div class="stat__value" id="when-85">—</div><div class="stat__sub">on or before</div></div>
+                <div class="stat"><div class="stat__label">95%</div><div class="stat__value" id="when-95">—</div><div class="stat__sub">on or before</div></div>
+              </div>
+              <p class="hint" id="when-note" style="margin: 0;"></p>
+              <canvas class="chart" id="when-chart" height="200" role="img" aria-label="Distribution of completion dates"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <details class="card howto mt-4">
+    <summary>How to use this</summary>
+    <div class="card__body">
+      <p>
+        This tool follows the flow metrics of the <strong>Kanban Guide</strong> (ProKanban.org) and
+        Daniel Vacanti's <em>When Will It Be Done?</em>: cycle time, throughput, WIP and work item age,
+        plus <strong>Monte Carlo</strong> forecasting instead of story-point promises.
+      </p>
+      <ul>
+        <li><strong>Export finished and unfinished items</strong> with a start date and a done date. In Jira, "Created" and "Resolved" work, but Created measures lead time; a date for when work really started (a "Start date" field, or the "In Progress" transition date) gives true cycle times. Linear: "Started" and "Completed", with "Canceled" mapped so canceled work is left out. GitHub: "created_at" and "closed_at". To keep only some rows (for example one status or issue type), map that column as the segment and pick it in the segment filter.</li>
+        <li><strong>Set the as-of date</strong> to the day the export was pulled. It defaults to today, which is right for a fresh export; ages and forecasts are measured from it.</li>
+        <li><strong>Read the 85th percentile</strong> as your service level expectation: "85% of our items finish within N days". Bring it to refinement to spot items that are too big before they start.</li>
+        <li><strong>Walk the aging list in the Daily Scrum</strong> or standup, oldest first. An item already older than your P85 is a conversation about help, splitting or unblocking, not about blame.</li>
+        <li><strong>Check Little's Law</strong> (average WIP = throughput × cycle time). When predicted and actual cycle time drift far apart, the system is not stable: WIP is growing or items are being abandoned, and forecasts will be optimistic.</li>
+        <li><strong>Forecast with ranges.</strong> For "how many by a date", 85% confidence means 85% of simulated futures finished at least that many items (the 15th percentile of totals). For "when", it is the date by which 85% of futures were done. Re-forecast whenever the data changes, not once per quarter.</li>
+        <li><strong>Compare segments</strong> (type, or a label like "agent-assisted" vs "human") to check whether a change in how you work actually moved end-to-end cycle time.</li>
+      </ul>
+      <p>
+        This tool deliberately never breaks data down by person. Assignee, reporter and similar columns
+        are ignored on import, because flow is a property of the system, and per-person numbers turn
+        into performance reports.
+      </p>
+    </div>
+  </details>
+</main>
+
+<dialog id="md-dialog" aria-labelledby="md-title">
+  <div class="card__head">
+    <h2 id="md-title">Markdown summary</h2>
+    <button class="btn btn--ghost btn--icon" id="md-close" type="button" aria-label="Close">✕</button>
+  </div>
+  <div class="card__body stack">
+    <textarea id="md-text" readonly aria-label="Markdown summary"></textarea>
+    <div class="btn-row">
+      <button class="btn btn--primary" id="md-copy" type="button">Copy</button>
+      <button class="btn" id="md-download" type="button">Download .md</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="toasts"></div>
+
+<script src="../../assets/js/store.js"></script>
+<script src="../../assets/js/ui.js"></script>
+<script src="./flow.js"></script>
+</body>
+</html>

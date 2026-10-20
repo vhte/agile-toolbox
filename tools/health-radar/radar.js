@@ -29,7 +29,29 @@
     { id: "flow", name: "Flow", statement: "Work moves without long waits on approvals, handoffs or other teams." }
   ];
 
+  var AI_DIMS = [
+    { id: "ai-safety", name: "Psychological safety", statement: "I can raise a problem, a doubt or a mistake, including one an agent made for me, without it being held against me." },
+    { id: "ai-stance", name: "Clear AI stance", statement: "I know what use of AI is allowed and expected on this team." },
+    { id: "ai-trust", name: "Trust in AI output", statement: "We check AI output in proportion to the risk, neither trusting it blindly nor dismissing it." },
+    { id: "ai-review", name: "Review load is sustainable", statement: "Reviewing generated work fits in the week without crowding out everything else." },
+    { id: "ai-context", name: "Shared context", statement: "Decisions and conventions are written down where both people and agents can find them." },
+    { id: "ai-growth", name: "Skill growth", statement: "I am learning here, not quietly losing skills I used to have." },
+    { id: "ai-pace", name: "Sustainable pace", statement: "We could keep working at this pace indefinitely." },
+    { id: "ai-flow", name: "Flow", statement: "Work moves without long waits on reviews, approvals, handoffs or agent output." }
+  ];
+
+  /**
+   * Question sets. Each keeps its own (editable) dimensions and its own rounds;
+   * the code signature is computed from the dimensions, so a code made against
+   * one set is rejected by the other. Rounds saved before sets existed are "classic".
+   */
+  var SETS = {
+    classic: { label: "Classic", dims: DEFAULT_DIMS },
+    ai: { label: "Humans + AI", dims: AI_DIMS }
+  };
+
   var state = {
+    setId: "classic",
     dims: [],
     rounds: [],
     round: null,
@@ -40,29 +62,63 @@
 
   /* --- Persistence ------------------------------------------------------ */
   function load() {
-    state.dims = Store.read(NS, "dims", null) || JSON.parse(JSON.stringify(DEFAULT_DIMS));
+    // A facilitator can share a link ending in #set=ai so everyone answers the same set.
+    var fromLink = /(?:^|[#&])set=([a-z]+)/.exec(location.hash);
+    var setId = fromLink && SETS[fromLink[1]] ? fromLink[1] : Store.read(NS, "set", "classic");
+    state.setId = SETS[setId] ? setId : "classic";
+    Store.write(NS, "set", state.setId);
+    state.dims = readDims(state.setId);
     state.rounds = Store.read(NS, "rounds", []);
-    if (!state.rounds.length) {
-      state.rounds = [newRound("Round 1")];
-      saveRounds();
-    }
-    var active = Store.read(NS, "activeRound", null);
-    state.round = state.rounds.filter(function (r) { return r.id === active; })[0] || state.rounds[state.rounds.length - 1];
-    Store.write(NS, "activeRound", state.round.id);
+    pickRound(Store.read(NS, "activeRound", null));
     state.draft = Store.read(NS, "draft", {});
   }
-  function saveDims() { Store.write(NS, "dims", state.dims); }
+  /** The classic set keeps the original "dims" key so older data loads unchanged. */
+  function dimsKey(setId) { return setId === "classic" ? "dims" : "dims:" + setId; }
+  function readDims(setId) {
+    return Store.read(NS, dimsKey(setId), null) || JSON.parse(JSON.stringify(SETS[setId].dims));
+  }
+  function roundsInSet() {
+    return state.rounds.filter(function (r) { return (r.set || "classic") === state.setId; });
+  }
+  /** Make `activeId` the current round if it belongs to this set, else the latest one. */
+  function pickRound(activeId) {
+    var mine = roundsInSet();
+    if (!mine.length) {
+      state.rounds.push(newRound("Round 1"));
+      saveRounds();
+      mine = roundsInSet();
+    }
+    state.round = mine.filter(function (r) { return r.id === activeId; })[0] || mine[mine.length - 1];
+    Store.write(NS, "activeRound", state.round.id);
+  }
+  function switchSet(setId) {
+    if (!SETS[setId] || setId === state.setId) return;
+    state.setId = setId;
+    Store.write(NS, "set", setId);
+    state.dims = readDims(setId);
+    state.trendDim = "__overall__";
+    pickRound(null);
+    UI.qs("#code-card").classList.add("hidden");
+    renderAll();
+  }
+  function renderSetSelect() {
+    var sel = UI.clear(UI.qs("#question-set"));
+    Object.keys(SETS).forEach(function (k) {
+      sel.appendChild(UI.el("option", { value: k, text: SETS[k].label, selected: k === state.setId }));
+    });
+  }
+  function saveDims() { Store.write(NS, dimsKey(state.setId), state.dims); }
   function saveRounds() { Store.write(NS, "rounds", state.rounds); }
   function saveDraft() { Store.write(NS, "draft", state.draft); }
 
   function newRound(label) {
-    return { id: UI.uid("round"), label: label || "Round", date: UI.isoDate(), size: null, responses: [] };
+    return { id: UI.uid("round"), label: label || "Round", date: UI.isoDate(), size: null, set: state.setId, responses: [] };
   }
 
   /* --- Codes ------------------------------------------------------------ */
   /** Stable 3-char signature of the current question set. */
-  function signature() {
-    var seed = state.dims.map(function (d) { return d.id + "|" + d.name; }).join("~");
+  function signature(dims) {
+    var seed = (dims || state.dims).map(function (d) { return d.id + "|" + d.name; }).join("~");
     var h = 2166136261;
     for (var i = 0; i < seed.length; i++) {
       h ^= seed.charCodeAt(i);
@@ -97,12 +153,17 @@
     var body = raw.slice(4);
     if (body.charAt(0) !== VERSION) return { ok: false, why: "different code version" };
     var sig = body.slice(1, 4);
-    if (sig !== signature()) return { ok: false, why: "answered a different question set" };
+    if (sig !== signature()) {
+      var other = Object.keys(SETS).filter(function (k) {
+        return k !== state.setId && signature(readDims(k)) === sig;
+      })[0];
+      return { ok: false, why: other ? "answered the " + SETS[other].label + " question set" : "answered a different question set" };
+    }
     var rest = body.slice(4);
     if (rest.length !== state.dims.length + 1) return { ok: false, why: "wrong length for " + state.dims.length + " questions" };
     var digits = rest.slice(0, state.dims.length);
     if (!/^[1-5]+$/.test(digits)) return { ok: false, why: "scores out of range" };
-    if (checksum(digits) !== rest.slice(-1)) return { ok: false, why: "checksum failed — probably a typo" };
+    if (checksum(digits) !== rest.slice(-1)) return { ok: false, why: "checksum failed, probably a typo" };
     return { ok: true, scores: digits.split("").map(Number) };
   }
 
@@ -127,13 +188,11 @@
     });
   }
 
-  function roundIndex(round) {
-    return state.rounds.map(function (r) { return r.id; }).indexOf(round.id);
-  }
   function previousRound() {
-    var i = roundIndex(state.round);
+    var mine = roundsInSet();
+    var i = mine.map(function (r) { return r.id; }).indexOf(state.round.id);
     for (var k = i - 1; k >= 0; k--) {
-      if (state.rounds[k].responses.length >= MIN_RESPONSES) return state.rounds[k];
+      if (mine[k].responses.length >= MIN_RESPONSES) return mine[k];
     }
     return null;
   }
@@ -160,7 +219,14 @@
           radio.addEventListener("change", function () {
             state.draft[d.id] = value;
             saveDraft();
-            renderQuestions();
+            // Rebuild after the event, then put focus back on the picked radio
+            // so arrow keys keep working for keyboard users.
+            UI.defer(function () {
+              renderQuestions();
+              UI.qsa("#questions input[type=radio]").forEach(function (r) {
+                if (r.name === "q-" + d.id && r.value === String(value)) r.focus();
+              });
+            });
           });
           label.appendChild(radio);
           label.appendChild(UI.el("span", { class: "num", text: String(value) }));
@@ -191,7 +257,7 @@
   /* --- Facilitator: rounds --------------------------------------------- */
   function renderRoundSelect() {
     var sel = UI.clear(UI.qs("#round-select"));
-    state.rounds.forEach(function (r) {
+    roundsInSet().forEach(function (r) {
       sel.appendChild(UI.el("option", {
         value: r.id, selected: r.id === state.round.id,
         text: r.label + " · " + r.responses.length + " resp."
@@ -208,7 +274,7 @@
       note.textContent = "No responses yet. Send everyone this page, collect the codes, paste them above.";
     } else if (n < MIN_RESPONSES) {
       note.textContent = n + " in. Results unlock at " + MIN_RESPONSES +
-        " — with fewer than that, a chart can be read back to a person.";
+        ". With fewer than that, a chart can be read back to a person.";
     } else {
       var pct = state.round.size ? Math.round((n / state.round.size) * 100) + "% of the team" : "team size not set";
       note.textContent = n + " responses · " + pct + ". Paste more at any time; duplicates are legitimate answers, not errors.";
@@ -230,7 +296,7 @@
     renderFacilitator();
     if (added) UI.toast("Added " + added + " response" + (added === 1 ? "" : "s") + ".", "ok");
     if (problems.length) {
-      UI.toast(problems.length + " code(s) rejected — left in the box with the reason.", "danger", 6000);
+      UI.toast(problems.length + " code(s) rejected and left in the box with the reason.", "danger", 6000);
     }
   }
 
@@ -435,7 +501,7 @@
   }
 
   function trendSeries() {
-    return state.rounds.filter(function (r) { return revealed(r); }).map(function (r) {
+    return roundsInSet().filter(function (r) { return revealed(r); }).map(function (r) {
       var stats = statsFor(r);
       var value;
       if (state.trendDim === "__overall__") {
@@ -468,7 +534,7 @@
       ctx.fillStyle = css("--text-3", "#888");
       ctx.font = "13px " + font;
       ctx.textAlign = "center";
-      ctx.fillText(series.length ? "One round in — a trend needs two." : "No revealed rounds yet.", w / 2, h / 2);
+      ctx.fillText(series.length ? "One round in. A trend needs two." : "No revealed rounds yet.", w / 2, h / 2);
       return;
     }
 
@@ -517,7 +583,7 @@
 
   function renderTrendTable() {
     var tbl = UI.clear(UI.qs("#trend-table"));
-    var revealedRounds = state.rounds.filter(revealed);
+    var revealedRounds = roundsInSet().filter(revealed);
     if (!revealedRounds.length) {
       tbl.appendChild(UI.el("tbody", {}, UI.el("tr", {}, UI.el("td", {
         class: "muted center", text: "Nothing revealed yet."
@@ -568,7 +634,7 @@
       host.appendChild(UI.el("p", {
         class: "empty",
         text: "Waiting for " + (MIN_RESPONSES - state.round.responses.length) +
-          " more response(s). This threshold is not a technical limit — it is what makes the answer safe to give."
+          " more response(s). This threshold is not a technical limit: it is what makes the answer safe to give."
       }));
       return;
     }
@@ -590,13 +656,13 @@
 
     var lowest = stats.slice().sort(function (a, b) { return a.mean - b.mean; }).slice(0, 2);
     host.appendChild(section("Look here first", lowest.map(function (s) {
-      return s.dim.name + " — " + UI.round(s.mean, 1).toFixed(1);
+      return s.dim.name + ": " + UI.round(s.mean, 1).toFixed(1);
     }), "The two lowest scores. Ask about them; do not explain them away."));
 
     var contested = stats.slice().sort(function (a, b) { return b.sd - a.sd; })
       .filter(function (s) { return s.sd >= 0.9; }).slice(0, 3);
     host.appendChild(section("Least agreement", contested.length
-      ? contested.map(function (s) { return s.dim.name + " — spread " + s.min + "–" + s.max + " (sd " + UI.round(s.sd, 2) + ")"; })
+      ? contested.map(function (s) { return s.dim.name + ": spread " + s.min + "–" + s.max + " (sd " + UI.round(s.sd, 2) + ")"; })
       : ["Nothing strongly contested this round."],
       "People on the same team living different realities is usually the more interesting finding."));
 
@@ -631,7 +697,10 @@
         type: "text", value: d.name, placeholder: "Name",
         "aria-label": "Name of dimension " + (i + 1)
       });
-      name.addEventListener("input", UI.debounce(function () { d.name = name.value; saveDims(); softRefresh(); }, 400));
+      // Assign at once, debounce the save and the repaint. The repaint must not
+      // rebuild this editor, or the field loses focus mid-word.
+      var repaint = UI.debounce(function () { saveDims(); softRefresh(); }, 400);
+      name.addEventListener("input", function () { d.name = name.value; repaint(); });
       row.appendChild(name);
 
       var stmt = UI.el("input", {
@@ -639,7 +708,8 @@
         placeholder: "Statement people react to",
         "aria-label": "Statement for " + (d.name || "dimension " + (i + 1))
       });
-      stmt.addEventListener("input", UI.debounce(function () { d.statement = stmt.value; saveDims(); }, 400));
+      var saveStmt = UI.debounce(saveDims, 400);
+      stmt.addEventListener("input", function () { d.statement = stmt.value; saveStmt(); });
       row.appendChild(stmt);
 
       row.appendChild(UI.el("button", {
@@ -648,7 +718,7 @@
           if (state.dims.length <= 3) { UI.toast("Three dimensions is the floor for a radar.", "danger"); return; }
           if (!UI.confirmDanger("Removing a dimension invalidates existing codes and drops that column from stored rounds. Continue?")) return;
           state.dims.splice(i, 1);
-          state.rounds.forEach(function (r) {
+          roundsInSet().forEach(function (r) {
             r.responses = r.responses.map(function (resp) {
               var copy = resp.slice();
               copy.splice(i, 1);
@@ -664,11 +734,11 @@
 
   /* --- Export ---------------------------------------------------------- */
   function toMarkdown() {
-    var out = ["# Team health radar", ""];
-    var revealedRounds = state.rounds.filter(revealed);
+    var out = ["# Team health radar · " + SETS[state.setId].label, ""];
+    var revealedRounds = roundsInSet().filter(revealed);
     out.push("_" + revealedRounds.length + " revealed round(s) · " + state.dims.length + " dimensions_", "");
     out.push("## Questions", "");
-    state.dims.forEach(function (d) { out.push("- **" + d.name + "** — " + d.statement); });
+    state.dims.forEach(function (d) { out.push("- **" + d.name + "**: " + d.statement); });
     out.push("");
 
     if (!revealedRounds.length) {
@@ -687,7 +757,7 @@
       out.push("");
       var stats = statsFor(state.round);
       if (revealed(state.round)) {
-        out.push("## " + state.round.label + " — spread", "");
+        out.push("## " + state.round.label + ": spread", "");
         out.push("| Dimension | Mean | Min | Max | SD |");
         out.push("|---|---:|---:|---:|---:|");
         stats.forEach(function (s) {
@@ -697,7 +767,7 @@
       }
     }
     out.push("", "---",
-      "_Generated with Agile Toolbox — Team Health Radar. Individual responses are not stored; only the numbers, unlabelled._");
+      "_Generated with Agile Toolbox · Team Health Radar. Individual responses are not stored; only the numbers, unlabelled._");
     return out.join("\n");
   }
 
@@ -725,11 +795,17 @@
   }
 
   function softRefresh() {
-    if (state.role === "answer") renderQuestions();
-    else renderFacilitator();
+    if (state.role === "answer") { renderQuestions(); return; }
+    renderRoundSelect();
+    renderTrendControls();
+    drawRadar();
+    drawTrend();
+    renderTrendTable();
+    renderReadout();
   }
 
   function renderAll() {
+    renderSetSelect();
     renderQuestions();
     if (state.role === "facilitate") renderFacilitator();
   }
@@ -738,8 +814,11 @@
   function init() {
     UI.initChrome();
     load();
+    renderSetSelect();
     renderQuestions();
     setRole(Store.read(NS, "role", "answer"));
+
+    UI.qs("#question-set").addEventListener("change", function (e) { switchSet(e.target.value); });
 
     UI.qsa("#role-tabs .role-tab").forEach(function (b) {
       b.addEventListener("click", function () { setRole(b.dataset.role); });
@@ -760,14 +839,14 @@
     });
 
     UI.qs("#round-select").addEventListener("change", function (e) {
-      state.round = state.rounds.filter(function (r) { return r.id === e.target.value; })[0] || state.rounds[0];
-      Store.write(NS, "activeRound", state.round.id);
+      pickRound(e.target.value);
       renderFacilitator();
     });
     UI.qs("#new-round").addEventListener("click", function () {
-      var label = prompt("Round label", "Round " + (state.rounds.length + 1));
+      var nextLabel = "Round " + (roundsInSet().length + 1);
+      var label = prompt("Round label", nextLabel);
       if (label === null) return;
-      var r = newRound(label.trim() || "Round " + (state.rounds.length + 1));
+      var r = newRound(label.trim() || nextLabel);
       state.rounds.push(r);
       state.round = r;
       saveRounds();
@@ -775,17 +854,18 @@
       renderFacilitator();
     });
     UI.qs("#delete-round").addEventListener("click", function () {
-      if (state.rounds.length === 1) { UI.toast("Keep at least one round.", "danger"); return; }
+      if (roundsInSet().length === 1) { UI.toast("Keep at least one round.", "danger"); return; }
       if (!UI.confirmDanger("Delete “" + state.round.label + "” and its responses?")) return;
       state.rounds = state.rounds.filter(function (r) { return r.id !== state.round.id; });
-      state.round = state.rounds[state.rounds.length - 1];
       saveRounds();
-      Store.write(NS, "activeRound", state.round.id);
+      pickRound(null);
       renderFacilitator();
     });
-    UI.qs("#round-label").addEventListener("input", UI.debounce(function (e) {
-      state.round.label = e.target.value; saveRounds(); renderRoundSelect();
-    }, 300));
+    var saveLabel = UI.debounce(function () { saveRounds(); renderRoundSelect(); }, 300);
+    UI.qs("#round-label").addEventListener("input", function (e) {
+      state.round.label = e.target.value;   // at once: renderRoundSelect repaints this field
+      saveLabel();
+    });
     UI.qs("#round-date").addEventListener("change", function (e) {
       state.round.date = e.target.value; saveRounds(); drawTrend(); renderTrendTable();
     });
@@ -811,16 +891,16 @@
     UI.qs("#add-dim").addEventListener("click", function () {
       state.dims.push({ id: UI.uid("d"), name: "New dimension", statement: "Statement people react to." });
       saveDims();
-      state.rounds.forEach(function (r) {
+      roundsInSet().forEach(function (r) {
         r.responses = r.responses.map(function (resp) { return resp.concat([3]); });
       });
       saveRounds();
       renderAll();
-      UI.toast("Added. Existing rounds were back-filled with a neutral 3 — replace them if you can.", "danger", 6000);
+      UI.toast("Added. Existing rounds were back-filled with a neutral 3. Replace them if you can.", "danger", 6000);
     });
     UI.qs("#reset-dims").addEventListener("click", function () {
-      if (!UI.confirmDanger("Reset to the default eight dimensions? Stored rounds keep their numbers but may no longer line up.")) return;
-      state.dims = JSON.parse(JSON.stringify(DEFAULT_DIMS));
+      if (!UI.confirmDanger("Reset to the default " + SETS[state.setId].label + " dimensions? Stored rounds keep their numbers but may no longer line up.")) return;
+      state.dims = JSON.parse(JSON.stringify(SETS[state.setId].dims));
       saveDims();
       renderAll();
     });
@@ -841,7 +921,7 @@
     UI.qs("#export-json").addEventListener("click", function () {
       UI.downloadJSON("team-health-radar.json", {
         app: "agile-toolbox", tool: "health-radar", schema: Store.schema,
-        dims: state.dims, rounds: state.rounds
+        set: state.setId, dims: state.dims, rounds: roundsInSet()
       });
     });
     UI.qs("#import-json").addEventListener("click", function () {
@@ -850,14 +930,18 @@
           UI.toast("That file is not a radar export.", "danger");
           return;
         }
+        // An export holds one question set: it replaces that set's dimensions
+        // and rounds, and leaves the other set alone.
+        var setId = SETS[payload.set] ? payload.set : "classic";
+        state.setId = setId;
+        Store.write(NS, "set", setId);
         state.dims = payload.dims;
-        state.rounds = payload.rounds;
-        state.round = state.rounds[state.rounds.length - 1] || newRound("Round 1");
-        if (!state.rounds.length) state.rounds = [state.round];
+        payload.rounds.forEach(function (r) { r.set = setId; });
+        state.rounds = state.rounds.filter(function (r) { return (r.set || "classic") !== setId; }).concat(payload.rounds);
         saveDims(); saveRounds();
-        Store.write(NS, "activeRound", state.round.id);
+        pickRound(null);
         renderAll();
-        UI.toast("Imported " + state.rounds.length + " round(s).", "ok");
+        UI.toast("Imported " + payload.rounds.length + " round(s).", "ok");
       });
     });
     UI.qs("#export-md").addEventListener("click", function () {

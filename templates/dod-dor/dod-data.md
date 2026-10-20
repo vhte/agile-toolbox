@@ -1,4 +1,4 @@
-# Definition of Done — Data pipelines / Analytics / Warehouse models
+# Definition of Done: Data pipelines / Analytics / Warehouse models
 
 > A data change is done when someone can **trust the number** without asking who built it.
 > Fork this, cut it down, agree on the rest.
@@ -18,7 +18,7 @@
 - [ ] A freshness check exists and fails loudly when data stops arriving.
 - [ ] Volume anomaly check exists for the tables people will build dashboards on.
 - [ ] Transformation logic has unit tests over fixture data, including the awkward rows.
-- [ ] The pipeline is **idempotent** — a re-run does not double-count anything.
+- [ ] The pipeline is **idempotent**: a re-run does not double-count anything.
 
 ## Definitions
 
@@ -45,6 +45,6 @@
 ## Documentation
 
 - [ ] Model and column descriptions exist in the catalogue, in plain language.
-- [ ] Lineage is discoverable — a consumer can see where a number came from.
+- [ ] Lineage is discoverable: a consumer can see where a number came from.
 - [ ] Deprecated tables and columns are marked, with a removal date and a replacement.
 - [ ] Consumers of anything you changed were told before you changed it.

@@ -249,7 +249,7 @@
     p.holidays.slice().sort(function (a, b) { return a.date.localeCompare(b.date); }).forEach(function (h) {
       var chip = UI.el("span", {
         class: "holiday-chip",
-        title: stray[h.date] ? "Outside this sprint's working days — it changes nothing" : ""
+        title: stray[h.date] ? "Outside this sprint's working days, so it changes nothing" : ""
       });
       chip.appendChild(UI.el("span", {
         text: UI.prettyDate(h.date) + (h.name ? " · " + h.name : "") + (stray[h.date] ? " ⚠" : "")
@@ -299,7 +299,10 @@
         type: "text", value: m.name, placeholder: "Name",
         "aria-label": "Name of " + who
       });
-      name.addEventListener("input", UI.debounce(function () { m.name = name.value; save(); }, 300));
+      // Assign at once, debounce only the save: a change elsewhere re-renders
+      // this row from the model and would otherwise wipe what was just typed.
+      var saveSoon = UI.debounce(save, 300);
+      name.addEventListener("input", function () { m.name = name.value; saveSoon(); });
       tr.appendChild(UI.el("td", {}, name));
 
       // Generated cells need an explicit accessible name — a table header alone
@@ -376,7 +379,8 @@
         type: "text", value: h.label || "", placeholder: "Sprint 41",
         "aria-label": "Label of past sprint " + which
       });
-      label.addEventListener("input", UI.debounce(function () { h.label = label.value; save(); }, 300));
+      var saveLabel = UI.debounce(save, 300);
+      label.addEventListener("input", function () { h.label = label.value; saveLabel(); });
       tr.appendChild(UI.el("td", {}, label));
 
       [
@@ -384,10 +388,12 @@
         { key: "personDays", label: "Person-days available in " + which }
       ].forEach(function (spec) {
         var input = UI.el("input", {
-          type: "number", min: 0, step: "1", value: h[spec.key], "aria-label": spec.label
+          type: "number", min: 0, step: "1", value: h[spec.key], "aria-label": spec.label,
+          placeholder: spec.key === "delivered" ? "not yet" : null
         });
         input.addEventListener("change", function () {
-          h[spec.key] = Math.max(0, num(input.value, 0));
+          var blank = spec.key === "delivered" && input.value.trim() === "";
+          h[spec.key] = blank ? "" : Math.max(0, num(input.value, 0));
           input.value = h[spec.key];
           save();
           UI.defer(refresh);   // refresh rebuilds this row
@@ -395,7 +401,7 @@
         tr.appendChild(UI.el("td", { class: "num" }, input));
       });
 
-      var rate = num(h.personDays, 0) > 0 ? num(h.delivered, 0) / num(h.personDays, 1) : null;
+      var rate = num(h.personDays, 0) > 0 && num(h.delivered, -1) >= 0 ? num(h.delivered, 0) / num(h.personDays, 1) : null;
       tr.appendChild(UI.el("td", { class: "num", text: rate === null ? "—" : UI.round(rate, 2).toFixed(2) }));
 
       tr.appendChild(UI.el("td", { class: "num" }, UI.el("button", {
@@ -425,7 +431,7 @@
       { label: "Available", value: UI.round(cap.available, 1).toFixed(1), sub: "person-days in the sprint" },
       {
         label: "After focus factor", value: UI.round(cap.effective, 1).toFixed(1),
-        sub: cap.adjust === 1 ? "neutral — history speaks" : (cap.adjust > 1 ? "+" : "") + UI.round((cap.adjust - 1) * 100, 0) + "% vs history"
+        sub: cap.adjust === 1 ? "neutral, history speaks" : (cap.adjust > 1 ? "+" : "") + UI.round((cap.adjust - 1) * 100, 0) + "% vs history"
       }
     ].forEach(function (s) {
       host.appendChild(UI.el("div", { class: "stat" }, [
@@ -708,7 +714,7 @@
     var p = state.plan;
     var cap = capacity();
     var u = unitLabel();
-    var out = ["# Capacity plan — " + p.name, ""];
+    var out = ["# Capacity plan · " + p.name, ""];
     var start = UI.parseDate(p.start);
     out.push("_" + UI.prettyDate(p.start) + " → " +
       (start ? UI.prettyDate(UI.isoDate(UI.addDays(start, p.days - 1))) : "?") +
@@ -750,11 +756,12 @@
     out.push("| Sprint | Delivered | Person-days | Per person-day |");
     out.push("|---|---:|---:|---:|");
     p.history.forEach(function (h) {
-      var rate = num(h.personDays, 0) > 0 ? UI.round(num(h.delivered, 0) / num(h.personDays, 1), 2).toFixed(2) : "—";
-      out.push("| " + (h.label || "—") + " | " + num(h.delivered, 0) + " | " + num(h.personDays, 0) + " | " + rate + " |");
+      var known = num(h.delivered, -1) >= 0;
+      var rate = num(h.personDays, 0) > 0 && known ? UI.round(num(h.delivered, 0) / num(h.personDays, 1), 2).toFixed(2) : "—";
+      out.push("| " + (h.label || "—") + " | " + (known ? num(h.delivered, 0) : "not yet") + " | " + num(h.personDays, 0) + " | " + rate + " |");
     });
 
-    out.push("", "---", "_Generated with Agile Toolbox — Sprint Capacity Planner. A forecast, not a commitment._");
+    out.push("", "---", "_Generated with Agile Toolbox · Sprint Capacity Planner. A forecast, not a commitment._");
     return out.join("\n");
   }
 
@@ -786,7 +793,7 @@
     copy.history.push({
       id: UI.uid("h"),
       label: src.name,
-      delivered: 0,
+      delivered: "",   // unknown until the sprint ends; blank rows stay out of the forecast
       personDays: UI.round(capacity().available, 1)
     });
     state.plans.push(copy);
@@ -837,9 +844,11 @@
       switchPlan(state.plans[0].id);
     });
 
-    UI.qs("#sprint-name").addEventListener("input", UI.debounce(function (e) {
-      state.plan.name = e.target.value; save(); renderPlanSelect();
-    }, 300));
+    var saveName = UI.debounce(function () { save(); renderPlanSelect(); }, 300);
+    UI.qs("#sprint-name").addEventListener("input", function (e) {
+      state.plan.name = e.target.value;   // at once: refresh() repaints this field from the model
+      saveName();
+    });
     UI.qs("#sprint-start").addEventListener("change", function (e) {
       state.plan.start = e.target.value; save(); refresh();
     });
@@ -875,7 +884,7 @@
       state.plan.history.push({
         id: UI.uid("h"),
         label: "Sprint " + (state.plan.history.length + 1),
-        delivered: 0,
+        delivered: "",
         personDays: UI.round(capacity().available, 1) || 40
       });
       save();

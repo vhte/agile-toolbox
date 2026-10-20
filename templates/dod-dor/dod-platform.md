@@ -1,11 +1,11 @@
-# Definition of Done — Platform / Infrastructure / CI-CD
+# Definition of Done: Platform / Infrastructure / CI-CD
 
 > Platform work is done when **someone else can use it without asking you**.
 > Fork this, delete what your team will not honour, agree on the rest.
 
 ## Change itself
 
-- [ ] Expressed as code in the repository — no console-only change that the next `apply` would revert.
+- [ ] Expressed as code in the repository: no console-only change that the next `apply` would revert.
 - [ ] Reviewed by someone who did not write it and who understands the blast radius.
 - [ ] `plan` / dry-run output was read, not skimmed, and matches what was intended.
 - [ ] State and secrets handled through the agreed mechanism; nothing sensitive in the diff.
@@ -38,7 +38,7 @@
 ## Developer experience
 
 - [ ] Whoever this is for can **use it from the documentation alone**.
-- [ ] The path a developer takes is faster or clearer than before — not merely different.
+- [ ] The path a developer takes is faster or clearer than before: not merely different.
 - [ ] Local development still works, or the new requirement is documented and scripted.
 - [ ] Pipeline changes keep CI feedback time acceptable; a slower pipeline was a deliberate trade.
 

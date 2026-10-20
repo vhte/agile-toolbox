@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delegation Board · Agile Toolbox</title>
+<meta name="description" content="Who decides what: people, leads and AI agents. Map decision authority with Delegation Poker levels and an agent autonomy ladder, then export a matrix and an AGENTS.md section.">
+<link rel="icon" href="../../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="../../manifest.json">
+<link rel="stylesheet" href="../../assets/css/app.css">
+<style>
+  .toolbar { align-items: flex-end; }
+  .toolbar .field { flex: 0 1 240px; }
+  .new-from { display: flex; gap: var(--sp-2); }
+  .new-from select { flex: 1 1 auto; }
+
+  .howto summary, .legend summary { cursor: pointer; padding: var(--sp-3) var(--sp-4); font-weight: 650; }
+  .howto[open] summary, .legend[open] summary { border-bottom: 1px solid var(--border); }
+  .howto ul, .howto ol { margin: 0 0 var(--sp-3); padding-left: 1.2em; }
+  .howto li { margin-bottom: var(--sp-1); }
+
+  .legend-grid { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+  .ladder li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: var(--sp-2); font-size: 0.86rem; align-items: baseline; }
+  .ladder .lvl { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); text-align: center; }
+  .ladder li.risk .lvl { color: var(--danger); }
+  .ladder strong { font-weight: 650; }
+
+  .summary-grid { display: grid; gap: var(--sp-4); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  @media (max-width: 820px) { .summary-grid { grid-template-columns: minmax(0, 1fr); } }
+  .stats-row { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+  .lbar { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr) 28px; gap: var(--sp-2); align-items: center; font-size: 0.82rem; }
+  .lbar__name { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lbar__track { height: 14px; background: var(--surface-3); border-radius: 4px; overflow: hidden; }
+  .lbar__fill { height: 100%; background: var(--accent); border-radius: 4px; }
+  .lbar--risk .lbar__fill { background: var(--danger); }
+  .lbar__n { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .warn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  .warn-item { padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background: var(--danger-soft); color: var(--danger); font-size: 0.86rem; display: flex; gap: var(--sp-2); align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+  .warn-item span { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+  .ok-note { padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background: var(--ok-soft); color: var(--ok); font-size: 0.86rem; }
+
+  .view-tabs { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; }
+  .view-tabs button { border: 0; border-radius: 0; background: var(--surface); color: var(--text-2); }
+  .view-tabs button + button { border-left: 1px solid var(--border-strong); }
+  .view-tabs button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+
+  .matrix { display: grid; gap: var(--sp-2); grid-template-columns: repeat(var(--cols), minmax(150px, 1fr)); min-width: calc(var(--cols) * 158px); }
+  .mcol { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-2); min-height: 180px; min-width: 0; }
+  .mcol.is-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .mcol--risk { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); background: color-mix(in srgb, var(--danger-soft) 55%, var(--surface-2)); }
+  .mcol__head { padding: 2px 4px var(--sp-2); border-bottom: 1px solid var(--border); }
+  .mcol__num { font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mcol__name { font-weight: 650; font-size: 0.88rem; }
+  .mcol__meaning { font-size: 0.76rem; color: var(--text-2); line-height: 1.35; margin-top: 2px; }
+  .mcol--risk .mcol__num { color: var(--danger); }
+  .mcol__empty { font-size: 0.78rem; color: var(--text-3); text-align: center; padding: var(--sp-3) 0; }
+
+  .dcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--sp-2); box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 6px; cursor: grab; min-width: 0; }
+  .dcard.is-dragging { opacity: 0.5; }
+  .dcard__title { all: unset; cursor: pointer; font-weight: 600; font-size: 0.86rem; line-height: 1.35; overflow-wrap: anywhere; color: var(--text); }
+  .dcard__title:hover { color: var(--accent); }
+  .dcard__title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .dcard__tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .dcard select { font-size: 0.78rem; padding: 3px 5px; }
+  .dcard .tag { white-space: normal; }
+
+  /* Positioned, so the sr-only header inside the table scrolls with it instead of widening the page. */
+  #view { position: relative; }
+  #board-title { overflow-wrap: anywhere; }
+  table.data td { vertical-align: top; }
+  table.deleg { min-width: 1120px; }
+  table.deleg .c-dec { min-width: 240px; }
+  table.deleg .c-cat { min-width: 140px; }
+  table.deleg .c-people { min-width: 140px; }
+  table.deleg .c-agent { min-width: 250px; }
+  table.deleg .c-date { min-width: 150px; }
+  table.deleg .c-tags { min-width: 120px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  dialog .dlg-head { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); }
+  dialog .dlg-head h2 { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  dialog .dlg-foot { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: flex-end; padding: var(--sp-3) var(--sp-4); border-top: 1px solid var(--border); }
+  dialog.wide { max-width: min(94vw, 760px); }
+  .two { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .level-desc { font-size: 0.8rem; color: var(--text-2); }
+  .level-desc.risk { color: var(--danger); font-weight: 600; }
+
+  .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pick { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border: 1px solid var(--border-strong); border-radius: 999px; font-size: 0.84rem; cursor: pointer; background: var(--surface); }
+  .pick:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 650; }
+  .pick.risk:has(input:checked) { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+  .pick:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .voters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .voter { display: inline-flex; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--surface-3); font-size: 0.82rem; max-width: 100%; }
+  .voter span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .voter__hidden { letter-spacing: 0.1em; color: var(--text-3); font-weight: 700; }
+  canvas.dist { width: 100%; height: 110px; display: block; }
+  .dist-stats { font-size: 0.85rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .disagree { padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background: var(--warn-soft); color: var(--warn); font-weight: 650; font-size: 0.88rem; }
+  .aligned { padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background: var(--ok-soft); color: var(--ok); font-size: 0.88rem; }
+  textarea.export { font-family: var(--font-mono); font-size: 0.8rem; min-height: 320px; white-space: pre; }
+</style>
+</head>
+<body data-title="Delegation Board" data-root="../../">
+
+<main class="wrap wrap--wide">
+
+  <div class="row mb-3 toolbar">
+    <div class="field">
+      <label class="label" for="board-select">Board</label>
+      <select id="board-select"></select>
+    </div>
+    <div class="field">
+      <label class="label" for="new-from">New board from</label>
+      <div class="new-from">
+        <select id="new-from">
+          <option value="software">Software team with coding agents</option>
+          <option value="product">Product &amp; discovery</option>
+          <option value="ops">Ops / on-call with automation</option>
+          <option value="blank">Blank board</option>
+        </select>
+        <button class="btn btn--primary" id="create-board" type="button">Create</button>
+      </div>
+    </div>
+    <div class="btn-row" id="board-actions">
+      <button class="btn" id="rename-board" type="button">Rename</button>
+      <button class="btn" id="duplicate-board" type="button">Duplicate</button>
+      <button class="btn btn--danger" id="delete-board" type="button">Delete</button>
+    </div>
+    <div class="topbar__spacer"></div>
+    <div class="btn-row">
+      <button class="btn" id="export-md" type="button">Markdown</button>
+      <button class="btn" id="export-agents" type="button">AGENTS.md</button>
+      <button class="btn" id="export-json" type="button">Export JSON</button>
+      <button class="btn" id="import-json" type="button">Import</button>
+    </div>
+  </div>
+
+  <details class="card howto mb-3">
+    <summary>How to use this</summary>
+    <div class="card__body">
+      <p>This board is built on <strong>Management 3.0 Delegation Poker</strong> (Jurgen Appelo): seven levels from
+        <em>Tell</em> (the lead decides) to <em>Delegate</em> (the team decides). Each decision area also gets a second,
+        independent setting for AI agents, because agents need their own calibration: an agent that can merge, deploy
+        or email a customer is a new actor in your decision system.</p>
+      <ol>
+        <li><strong>Start from a preset</strong> and delete what does not apply. Name decisions as verbs ("Merge a PR to main"), not topics ("Git").</li>
+        <li><strong>Play a poker round</strong> per contested row: everyone picks secretly, then reveal. A spread of 3 or more levels means people hold different pictures of who decides; talk about the extremes first.</li>
+        <li><strong>Write the guardrails and the rollback trigger</strong> before raising an agent level. Levels 4 and 5 let an agent act without approval, so the trigger ("one reverted change", "any customer complaint") must be concrete.</li>
+        <li><strong>Raise levels on evidence.</strong> A useful heuristic: if the human approver rejects or changes almost none of an agent's proposals for a decision, it is a candidate to move up one step, written as a rule with a rollback trigger.</li>
+        <li><strong>Publish the result.</strong> Export the AGENTS.md section (it starts at "## Autonomy and approvals") and paste it into your repository's AGENTS.md, for example under the Boundaries that the Working Agreements tool builds, so coding agents read the same rules people agreed on. Set a review date. A clear, communicated AI stance is the first capability in DORA's 2025 AI Capabilities Model.</li>
+      </ol>
+      <p class="hint">Owners are roles, not people. Poker picks are never stored: only the agreed level and an anonymous count per level.</p>
+    </div>
+  </details>
+
+  <section id="empty" class="empty hidden">
+    <p><strong>Make decision authority explicit for people and for AI agents.</strong></p>
+    <p>List the decisions your team makes, agree who decides each one with Delegation Poker, and set how far AI agents may go on their own. Export it as a delegation matrix and as an AGENTS.md section for your repository.</p>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn btn--primary btn--lg" id="load-example" type="button">Load an example</button>
+      <button class="btn btn--lg" id="start-blank" type="button">Start blank</button>
+    </div>
+  </section>
+
+  <section id="board" class="stack hidden">
+    <div class="card">
+      <div class="card__head"><h2>Summary</h2><span class="tag" id="row-count">0 decisions</span></div>
+      <div class="card__body summary-grid" id="summary" aria-live="polite"></div>
+    </div>
+
+    <details class="card legend">
+      <summary>Level definitions</summary>
+      <div class="card__body legend-grid">
+        <div>
+          <h3 class="mb-2">People: Delegation Poker (lead to team)</h3>
+          <ul class="ladder" id="legend-people"></ul>
+        </div>
+        <div>
+          <h3 class="mb-2">AI agents: autonomy ladder</h3>
+          <ul class="ladder" id="legend-agent"></ul>
+          <p class="hint mt-2">Levels in red let an agent make changes, including irreversible ones, without approval first.</p>
+        </div>
+      </div>
+    </details>
+
+    <div class="card">
+      <div class="card__head">
+        <h2 id="board-title">Board</h2>
+        <div class="view-tabs" role="group" aria-label="View">
+          <button class="btn btn--sm" type="button" data-view="people" aria-pressed="true">People matrix</button>
+          <button class="btn btn--sm" type="button" data-view="agent" aria-pressed="false">Agent matrix</button>
+          <button class="btn btn--sm" type="button" data-view="table" aria-pressed="false">Table</button>
+        </div>
+        <button class="btn btn--sm btn--primary" id="add-row" type="button">Add decision</button>
+      </div>
+      <div class="card__body">
+        <p class="hint mb-3" id="view-hint"></p>
+        <div class="table-scroll" id="view"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toasts"></div>
+
+<script src="../../assets/js/store.js"></script>
+<script src="../../assets/js/ui.js"></script>
+<script src="./delegation.js"></script>
+</body>
+</html>

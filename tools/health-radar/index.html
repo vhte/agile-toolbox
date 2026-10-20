@@ -64,9 +64,13 @@
       <button class="role-tab" type="button" data-role="answer" aria-current="true">I'm answering</button>
       <button class="role-tab" type="button" data-role="facilitate">I'm facilitating</button>
     </div>
+    <label class="check" for="question-set">
+      Question set
+      <select id="question-set" style="width: auto;"></select>
+    </label>
     <div class="topbar__spacer"></div>
     <p class="tiny muted" style="max-width: 420px; margin: 0;">
-      A response code carries nothing but your numbers — no name, no free text, no device id.
+      A response code carries nothing but your numbers: no name, no free text, no device id.
       Results stay hidden until at least three people have answered.
     </p>
   </div>
@@ -97,7 +101,7 @@
           <button class="btn" id="download-code" type="button">Download as .txt</button>
         </div>
         <p class="hint">
-          Send this to whoever is facilitating — channel, DM, a sheet, a sticky note. Order does not
+          Send this to whoever is facilitating: channel, DM, a sheet, a sticky note. Order does not
           matter and nothing in it points back to you. If two people happen to answer identically
           their codes are identical too, which is exactly the property you want.
         </p>
@@ -132,7 +136,7 @@
               </div>
             </div>
             <div class="field">
-              <label class="label" for="codes-in">Paste response codes — one per line</label>
+              <label class="label" for="codes-in">Paste response codes, one per line</label>
               <textarea id="codes-in" rows="4" placeholder="ATBX-4H3K-…&#10;ATBX-9P2M-…"></textarea>
             </div>
             <div class="btn-row">
@@ -189,8 +193,12 @@
             <div id="dims"></div>
             <p class="hint mt-3">
               Changing a dimension changes the code signature, so codes generated against the old set
-              stop matching. Agree on the set once, then leave it alone for a few rounds — a trend
+              stop matching. Agree on the set once, then leave it alone for a few rounds. A trend
               needs a stable question.
+            </p>
+            <p class="hint">
+              Each question set keeps its own dimensions and rounds. To have everyone answer the
+              Humans + AI set, share the page link with <code>#set=ai</code> added at the end.
             </p>
           </div>
         </div>

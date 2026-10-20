@@ -12,7 +12,7 @@ the feature is.
 1. **No build step.** Plain HTML, CSS and JavaScript, loaded with classic `<script>` tags.
    Someone should be able to fork the repo, edit a file, and hit refresh.
 2. **No dependencies.** Zero runtime dependencies, zero dev dependencies, no CDN links, no web
-   fonts. If you need a chart, draw it on a canvas — there are three examples already.
+   fonts. If you need a chart, draw it on a canvas (there are several examples already).
 3. **It must work from `file://`.** This rules out ES modules (`type="module"`), `fetch()` of
    local files, and anything else the browser blocks off the file system. Test by
    double-clicking the HTML file, not only through a local server.
@@ -21,6 +21,30 @@ the feature is.
    become a performance report is not. This is the constraint the project exists to protect.
 5. **Everything exports.** Any tool that stores something must be able to hand it back as JSON,
    and preferably as Markdown a human can paste into a ticket.
+
+## Project layout
+
+```
+agile-toolbox/
+├── index.html                  hub: tool launcher, backup/restore, storage stats
+├── manifest.json  sw.js        PWA: installable, offline app shell
+├── AGENTS.md                   instructions for AI coding agents working on this repo
+├── assets/
+│   ├── css/app.css             the whole design system: tokens, components, light/dark
+│   ├── js/store.js             localStorage wrapper, backup/restore, memory fallback
+│   └── js/ui.js                shared helpers: chrome, theme, toasts, dates, exports
+├── tools/
+│   ├── retro/  standup/  health-radar/                run the ceremonies
+│   ├── capacity/  flow/                               plan and forecast
+│   └── agreements/  delegation/  brief/  decisions/   make the rules explicit
+├── templates/dod-dor/          forkable Definition of Done / Ready checklists
+└── tests/
+    ├── smoke.mjs               optional zero-dependency browser test (Node 22 + Chrome)
+    └── scenarios/<tool>.js     one scripted walk through each tool's core path
+```
+
+Each tool is **one folder, two files**, sharing `app.css`, `store.js` and `ui.js`. That is the
+whole architecture.
 
 ## Adding a new tool
 
@@ -80,15 +104,17 @@ tools/<your-tool>/
 
 ### 3. Register it
 
-- Add a card to the tool grid in `index.html`.
-- Add both new files to the `SHELL` array in `sw.js`, and **bump `CACHE`** — otherwise returning
+- Add a card to the right group in `index.html`, and its namespace to the `TOOLS` list in the
+  same file so the "Your data" panel counts it.
+- Add both new files to the `SHELL` array in `sw.js`, and **bump `CACHE`**, otherwise returning
   users keep serving the old app shell from cache.
 - Add a shortcut entry to `manifest.json` if it is a top-level tool.
-- Add a section to the README, in the same shape as the existing four.
+- Add a section to the README, in the same shape as the existing ones.
+- Add `tests/scenarios/<your-tool>.js` (see *Testing a change*).
 
 ## The shared layer
 
-### `Store` — persistence
+### `Store`: persistence
 
 Everything lives in `localStorage` behind the `atbx:` prefix. Never call `localStorage` directly;
 `Store` handles the JSON, the corrupt-value fallback, and the private-mode case where storage
@@ -105,7 +131,7 @@ Store.usage()                     // rough byte count
 Store.isPersistent                // false when storage is blocked
 ```
 
-### `UI` — helpers
+### `UI`: helpers
 
 ```js
 UI.el(tag, props, children)       // props: class, text, html, dataset, style, on<event>
@@ -115,14 +141,16 @@ UI.isoDate(date)  UI.parseDate(iso)  UI.addDays(d,n)  UI.prettyDate(iso)  UI.mms
 UI.toast(msg, "ok"|"danger")  UI.confirmDanger(msg)
 UI.download(name, text, mime)  UI.downloadJSON(name, obj)  UI.copy(text)  UI.pickJSON(cb)
 UI.slug(str)  UI.shuffle(arr)  UI.debounce(fn, ms)  UI.autoGrow(textarea)
-UI.initChrome()  UI.addBarButton(label, fn)  UI.guardUnload(fn)
+UI.initChrome()  UI.addBarButton(label, fn)  UI.guardUnload(fn)  UI.defer(fn)  UI.escape(str)
 ```
 
+Toasts stay visible above an open modal `<dialog>`: `UI.toast` moves its host into the dialog.
+
 Dates: use `UI.isoDate` and `UI.parseDate` rather than `new Date(string)`. They are local-time
-by design — a sprint boundary that drifts a day because of UTC parsing is a real bug that has
+by design: a sprint boundary that drifts a day because of UTC parsing is a real bug that has
 bitten this codebase's ancestors.
 
-### `app.css` — the design system
+### `app.css`: the design system
 
 Use the tokens, never literal colours. Every colour is defined on bare `:root` and redefined for
 both `@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`, so the theme toggle
@@ -145,8 +173,9 @@ If you find yourself adding a colour to a tool's `<style>` block, add a token in
 
 ## Drawing charts
 
-Three canvas charts exist to copy from: a histogram and a survival curve in
-`tools/capacity/capacity.js`, a radar and a line chart in `tools/health-radar/radar.js`.
+Canvas charts to copy from: a histogram and a survival curve in `tools/capacity/capacity.js`, a
+radar and a line chart in `tools/health-radar/radar.js`, and a scatterplot, bar chart and line
+chart in `tools/flow/flow.js`.
 
 The pattern that matters:
 
@@ -163,15 +192,36 @@ Read colours from the tokens so charts follow the theme, size the canvas by
 
 ## Testing a change
 
-There is no test runner — which puts the burden on the checklist:
+### The automated smoke test (optional, recommended)
+
+`tests/smoke.mjs` opens every page from `file://` in a headless Chrome and fails on any console
+error, uncaught exception, horizontal scroll at 360px, or failing scenario. It needs Node 22 or
+newer and an installed Chrome or Chromium (set `CHROME=/path/to/chrome` if it is not found). It
+installs nothing and is never needed to *use* the toolbox.
+
+```bash
+node tests/smoke.mjs                  # every page
+node tests/smoke.mjs flow brief       # only pages whose path contains these words
+SHOTS=1 node tests/smoke.mjs retro    # also save light, dark and mobile screenshots to tests/shots/
+```
+
+A scenario, `tests/scenarios/<tool>.js`, is a script body evaluated inside the page. The helpers in
+`tests/scenarios/_helpers.js` (`$`, `$$`, `type`, `click`, `byText`, `assert`, `sleep`) are in scope.
+It should clear its own storage namespace, drive the real UI through the tool's core value path,
+assert on what a person would see, and `return "ok"`. When you fix a bug, add the assertion that
+would have caught it.
+
+### The manual checklist
+
+Automation does not see everything:
 
 - [ ] Open the page by **double-clicking the file** (`file://`), not just via a server.
-- [ ] Then check it again over `http://localhost` — the service worker and clipboard API only
+- [ ] Then check it again over `http://localhost`: the service worker and clipboard API only
       exist there.
 - [ ] Both themes, plus system, using the toggle in the top bar.
-- [ ] Narrow viewport (~360px) — no horizontal scroll on `body`.
+- [ ] Narrow viewport (~360px): no horizontal scroll on `body`.
 - [ ] Keyboard only: reach every control, see the focus ring, operate every button.
-- [ ] Reload the page — state comes back from `localStorage` as expected.
+- [ ] Reload the page: state comes back from `localStorage` as expected.
 - [ ] Export, then re-import your export into a fresh browser profile.
 - [ ] Console clean: no errors, no warnings you added.
 
@@ -186,7 +236,7 @@ There is no test runner — which puts the burden on the checklist:
 
 Useful bug reports include: which tool, what you did, what you expected, what happened, browser
 and version, and whether you were on `file://` or a server. If the tool lost data, please say so
-in the title — that class of bug jumps the queue.
+in the title: that class of bug jumps the queue.
 
 For a feature request, lead with the facilitation problem rather than the proposed UI. "Our
 retro actions never get done and nobody notices" produced the carry-over feature; "add a

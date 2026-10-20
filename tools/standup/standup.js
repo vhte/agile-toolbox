@@ -17,7 +17,9 @@
     "External / vendor",
     "Unclear requirements",
     "Capacity / people",
-    "Technical unknown"
+    "Technical unknown",
+    "Waiting on review",
+    "Waiting on AI/agent output"
   ];
 
   var CIRC = 2 * Math.PI * 58; // ring radius 58
@@ -97,14 +99,24 @@
     return m ? (m.name || "unnamed") : "(left the team)";
   }
 
+  /** A reshuffled order the facilitator already read out, still matching the roster. */
+  function pendingSessionUsable() {
+    var s = state.session;
+    if (!s || s.index !== -1 || s.teamId !== state.team.id) return false;
+    var fresh = buildOrder().slice().sort().join("|");
+    return s.order.slice().sort().join("|") === fresh;
+  }
+
   function startStandup() {
-    state.session = newSession();
+    if (!pendingSessionUsable()) state.session = newSession();
     if (!state.session.order.length) {
       UI.toast("Add at least one person to the roster.", "danger");
       state.session = null;
       return;
     }
     state.session.index = 0;
+    state.session.date = UI.isoDate();
+    state.session.startedAt = new Date().toISOString();
     state.session.remaining = state.team.timeboxSec;
     setRunning(true);
     renderLive();
@@ -267,11 +279,15 @@
         type: "text", value: b.text, placeholder: "What is in the way?",
         "aria-label": "Description of blocker " + (i + 1)
       });
-      text.addEventListener("input", UI.debounce(function () { b.text = text.value; refreshDigest(); }, 250));
+      // Assign at once, debounce only the repaint: Finish right after typing
+      // must not save the blocker without its text.
+      var repaint = UI.debounce(refreshDigest, 250);
+      text.addEventListener("input", function () { b.text = text.value; repaint(); });
       row.appendChild(text);
 
       var sel = UI.el("select", { "aria-label": "Category" });
-      CATEGORIES.forEach(function (c) {
+      var cats = CATEGORIES.indexOf(b.category) === -1 && b.category ? CATEGORIES.concat([b.category]) : CATEGORIES;
+      cats.forEach(function (c) {
         sel.appendChild(UI.el("option", { value: c, text: c, selected: c === b.category }));
       });
       sel.addEventListener("change", function () { b.category = sel.value; refreshDigest(); });
@@ -307,7 +323,7 @@
   function liveDigest() {
     var s = state.session;
     if (!s) return "—";
-    var out = ["# Daily standup — " + state.team.name + " — " + s.date, ""];
+    var out = ["# Daily standup · " + state.team.name + " · " + s.date, ""];
     out.push("_" + s.order.length + " participants · " + UI.mmss(s.totalSec) + " elapsed · " +
       UI.mmss(state.team.timeboxSec) + " per person_", "");
     out.push("**Speaking order:** " + s.order.map(memberName).join(" → "), "");
@@ -315,12 +331,12 @@
     out.push("## Blockers");
     if (!real.length) out.push("_None raised._");
     real.forEach(function (b) { out.push("- **[" + b.category + "]** " + b.text.trim()); });
-    out.push("", "---", "_Generated with Agile Toolbox — Standup Facilitator._");
+    out.push("", "---", "_Generated with Agile Toolbox · Standup Facilitator._");
     return out.join("\n");
   }
 
   var ASYNC_PROMPT = [
-    "Async standup — please reply in this thread before the cutoff:",
+    "Async standup: please reply in this thread before the cutoff:",
     "",
     "1. *Since my last update:* what moved?",
     "2. *Today:* what am I taking on?",
@@ -354,17 +370,19 @@
         field.appendChild(UI.el("label", { class: "label", text: labels[key] }));
         var ta = UI.el("textarea", {
           rows: 3, placeholder: "—",
-          "aria-label": labels[key] + " — " + m.name
+          "aria-label": labels[key] + ", " + m.name
         });
         ta.value = entry[key] || "";
-        ta.addEventListener("input", UI.debounce(function () {
+        // Saved on every keystroke: "Build digest" and a mode switch both read
+        // back from storage, so a pending debounce would drop the last words.
+        ta.addEventListener("input", function () {
           entry[key] = ta.value;
           saved[m.id] = entry;
           Store.write(NS, "async:" + state.team.id + ":" + UI.isoDate(), saved);
           var filled = (entry.done || entry.next || entry.blocked).trim();
           badge.textContent = filled ? "updated" : "no update";
           badge.className = "tag" + (filled ? " tag--ok" : "");
-        }, 300));
+        });
         field.appendChild(ta);
         body.appendChild(field);
       });
@@ -379,7 +397,7 @@
   function asyncDigest() {
     var saved = Store.read(NS, "async:" + state.team.id + ":" + UI.isoDate(), {});
     var members = state.team.members.filter(function (m) { return m.name.trim(); });
-    var out = ["# Async standup — " + state.team.name + " — " + UI.isoDate(), ""];
+    var out = ["# Async standup · " + state.team.name + " · " + UI.isoDate(), ""];
     var missing = [];
     var blocked = [];
 
@@ -392,7 +410,7 @@
       if ((e.next || "").trim()) out.push("- **Today:** " + e.next.trim().replace(/\n+/g, " / "));
       if ((e.blocked || "").trim()) {
         out.push("- **In the way:** " + e.blocked.trim().replace(/\n+/g, " / "));
-        blocked.push(m.name + " — " + e.blocked.trim().replace(/\n+/g, " / "));
+        blocked.push(m.name + ": " + e.blocked.trim().replace(/\n+/g, " / "));
       }
       out.push("");
     });
@@ -403,7 +421,7 @@
     if (missing.length) {
       out.push("", "_No update from: " + missing.join(", ") + "._");
     }
-    out.push("", "---", "_Generated with Agile Toolbox — Standup Facilitator._");
+    out.push("", "---", "_Generated with Agile Toolbox · Standup Facilitator._");
     return out.join("\n");
   }
 
@@ -543,12 +561,14 @@
     state.team.members.forEach(function (m, i) {
       var row = UI.el("div", { class: "roster-row" });
       var input = UI.el("input", { type: "text", value: m.name, placeholder: "Name", "aria-label": "Member name" });
-      input.addEventListener("input", UI.debounce(function () {
-        m.name = input.value;
+      var persist = UI.debounce(function () {
         saveTeams();
         paintQueue();
         renderLive();
-      }, 300));
+      }, 300);
+      // The name is needed at once: "Start standup" right after typing it
+      // would otherwise leave this person out of the order.
+      input.addEventListener("input", function () { m.name = input.value; persist(); });
       row.appendChild(input);
       row.appendChild(UI.el("button", {
         class: "btn btn--ghost btn--sm", type: "button", text: "✕", title: "Remove from roster",
@@ -579,6 +599,12 @@
   }
 
   function switchTeam(id) {
+    var live = state.session && state.session.index >= 0 && state.session.index < state.session.order.length;
+    if (live && !UI.confirmDanger("A standup is running for " + state.team.name +
+        ". Switching team discards it (blockers included). Switch anyway?")) {
+      renderTeamSelect();
+      return;
+    }
     clearInterval(state.tick);
     state.session = null;
     state.team = state.teams.filter(function (t) { return t.id === id; })[0] || state.teams[0];
@@ -666,7 +692,7 @@
     });
     UI.qs("#btn-reshuffle").addEventListener("click", function () {
       if (state.session && state.session.index >= 0 && state.session.index < state.session.order.length) {
-        UI.toast("Reshuffle before you start — mid-meeting it just confuses people.", "danger");
+        UI.toast("Reshuffle before you start. Mid-meeting it just confuses people.", "danger");
         return;
       }
       state.session = newSession();

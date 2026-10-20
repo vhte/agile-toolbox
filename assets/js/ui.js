@@ -6,11 +6,13 @@
 (function (global) {
   "use strict";
 
+  // Same mark as assets/icons/icon.svg: a toolbox with the iteration loop on its front.
   var LOGO =
     '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
-    '<rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="currentColor" opacity=".12"/>' +
-    '<path d="M6.5 14.5l3.2 3.2 8-9.4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>' +
-    '<path d="M6.5 9.2l1.9 1.9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" opacity=".45"/>' +
+    '<path d="M9 7.5V5.6A1.6 1.6 0 0 1 10.6 4h2.8A1.6 1.6 0 0 1 15 5.6v1.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
+    '<rect x="2.9" y="7.5" width="18.2" height="12.6" rx="2.6" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.8"/>' +
+    '<path d="M14.25 11.42A3.5 3.5 0 1 1 10.8 10.81" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+    '<path d="M12.64 10.14L9.75 9.81l.89 2.44z" fill="currentColor" stroke="currentColor" stroke-width=".8" stroke-linejoin="round"/>' +
     "</svg>";
 
   var SUN =
@@ -125,10 +127,12 @@
     /* --- Feedback -------------------------------------------------------- */
     toast: function (message, kind, ms) {
       var host = document.getElementById("toasts");
-      if (!host) {
-        host = UI.el("div", { id: "toasts" });
-        document.body.appendChild(host);
-      }
+      if (!host) host = UI.el("div", { id: "toasts" });
+      // A modal <dialog> sits in the top layer, above anything in <body>;
+      // the host moves into it so the toast is not hidden behind it.
+      var modal = document.querySelector("dialog[open]");
+      var parent = modal || document.body;
+      if (host.parentNode !== parent) parent.appendChild(host);
       var t = UI.el("div", { class: "toast" + (kind ? " toast--" + kind : ""), role: "status", text: message });
       host.appendChild(t);
       setTimeout(function () {
@@ -321,7 +325,9 @@
     autoGrow: function (textarea, minPx) {
       function grow() {
         textarea.style.height = "auto";
-        textarea.style.height = Math.max(minPx || 40, textarea.scrollHeight) + "px";
+        // scrollHeight excludes borders; under border-box the height includes them.
+        var borders = textarea.offsetHeight - textarea.clientHeight;
+        textarea.style.height = Math.max(minPx || 40, textarea.scrollHeight + borders) + "px";
       }
       textarea.addEventListener("input", grow);
       grow();

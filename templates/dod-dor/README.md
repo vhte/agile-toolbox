@@ -5,7 +5,7 @@ Starting points, not standards. Every file here is a Markdown checklist meant to
 
 ## How to use these
 
-1. Copy the file closest to your team into your own repository — next to the code, not in a wiki.
+1. Copy the file closest to your team into your own repository: next to the code, not in a wiki.
 2. Delete every line the team does not actually intend to honour. A Definition of Done with
    aspirational lines in it is worse than a short one, because it teaches people that the
    checklist is decoration.
@@ -22,12 +22,13 @@ asks "when did we start requiring that?".
 
 | File | For |
 |---|---|
-| [`definition-of-ready.md`](definition-of-ready.md) | Any team — what has to be true before work starts |
+| [`definition-of-ready.md`](definition-of-ready.md) | Any team: what has to be true before work starts |
 | [`dod-backend.md`](dod-backend.md) | Services, APIs, workers |
 | [`dod-frontend.md`](dod-frontend.md) | Web UI |
 | [`dod-platform.md`](dod-platform.md) | Infrastructure, CI/CD, developer platform |
 | [`dod-data.md`](dod-data.md) | Pipelines, warehouse models, analytics |
 | [`dod-mobile.md`](dod-mobile.md) | iOS / Android |
+| [`dod-ai-assisted.md`](dod-ai-assisted.md) | Addendum for any change an AI assistant or coding agent helped write |
 
 ## Two rules worth keeping
 

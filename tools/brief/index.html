@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Brief · Agile Toolbox</title>
+<meta name="description" content="Write work items a teammate or an AI agent can actually finish: goal, scope, testable acceptance criteria and verification, with a live, explainable readiness check.">
+<link rel="icon" href="../../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="../../manifest.json">
+<link rel="stylesheet" href="../../assets/css/app.css">
+<style>
+  .lead { color: var(--text-2); margin: 0 0 var(--sp-3); }
+  .howto summary { cursor: pointer; padding: var(--sp-3) var(--sp-4); font-weight: 650; }
+  .howto[open] summary { border-bottom: 1px solid var(--border); }
+  .howto ul, .howto ol { margin: 0 0 var(--sp-3); padding-left: 1.2em; }
+  .howto li { margin-bottom: var(--sp-1); }
+
+  .layout {
+    display: grid; gap: var(--sp-4); align-items: start;
+    grid-template-columns: 260px minmax(0, 1fr) minmax(300px, 380px);
+  }
+  @media (min-width: 861px) {
+    .side { position: sticky; top: 64px; max-height: calc(100vh - 76px); overflow-y: auto; }
+  }
+  @media (max-width: 1200px) {
+    .layout { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); }
+    .library { grid-column: 1 / -1; }
+    .library .lib-list { max-height: 220px; }
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .lib-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-1); max-height: 60vh; overflow-y: auto; }
+  .lib-item {
+    display: block; width: 100%; text-align: left; font: inherit; color: var(--text);
+    background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
+    padding: var(--sp-2) var(--sp-3); cursor: pointer;
+  }
+  .lib-item:hover { background: var(--surface-2); }
+  .lib-item[aria-current="true"] { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .lib-item__title { display: block; font-weight: 600; font-size: 0.9rem; overflow-wrap: anywhere; }
+  .lib-item__meta { display: flex; flex-wrap: wrap; gap: var(--sp-1); align-items: center; margin-top: 3px; font-size: 0.75rem; color: var(--text-3); }
+
+  .title-input { font-size: 1.05rem !important; font-weight: 600; }
+  .meta-grid { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .save-state { font-size: 0.78rem; color: var(--text-3); }
+
+  .list-edit { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  .le-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-2); align-items: start; }
+  .le-num { min-width: 1.6em; padding-top: 8px; text-align: right; font-size: 0.8rem; font-weight: 650; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .le-row textarea { min-height: 38px; overflow: hidden; }
+  .le-row .btn--icon { margin-top: 4px; }
+  .le-flags { grid-column: 2 / 3; display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+  .le-flags:empty { display: none; }
+  .dod-row { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+  .dod-row input[type="checkbox"] { margin-left: 4px; }
+
+  .gwt { border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); padding: var(--sp-3); background: var(--surface-2); }
+  .gwt-grid { display: grid; gap: var(--sp-2); grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+  .verdict { padding: var(--sp-3) var(--sp-4); border-radius: var(--radius); font-size: 0.9rem; border: 1px solid transparent; }
+  .verdict strong { font-weight: 700; font-size: 1.05rem; }
+  .verdict--ok { background: var(--ok-soft); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 30%, transparent); }
+  .verdict--warn { background: var(--warn-soft); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
+  .verdict--danger { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+
+  .checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  .chk { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: var(--sp-2); padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); }
+  .chk:last-child { border-bottom: 0; }
+  .chk__icon {
+    width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 800; margin-top: 1px;
+  }
+  .chk--pass .chk__icon { background: var(--ok-soft); color: var(--ok); }
+  .chk--warn .chk__icon { background: var(--warn-soft); color: var(--warn); }
+  .chk--fail .chk__icon { background: var(--danger-soft); color: var(--danger); }
+  .chk__label { font-weight: 600; font-size: 0.88rem; }
+  .chk__reason { font-size: 0.82rem; color: var(--text-2); margin: 2px 0 0; overflow-wrap: anywhere; }
+  .chk__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .chk__tags .tag { font-size: 0.68rem; padding: 1px 6px; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+  .tabs [role="tab"][aria-selected="true"] { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  pre.preview {
+    margin: 0; padding: var(--sp-3); background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.5;
+    white-space: pre-wrap; overflow-wrap: anywhere; max-height: 440px; overflow-y: auto; color: var(--text);
+  }
+  .risk-hint { font-size: 0.8rem; color: var(--text-2); }
+  .lib-list, .side, pre.preview { scrollbar-color: var(--border-strong) transparent; scrollbar-width: thin; }
+</style>
+</head>
+<body data-title="Task Brief" data-root="../../">
+
+<main class="wrap wrap--wide">
+  <p class="lead">Write work items a teammate or an AI agent can actually finish.</p>
+
+  <details class="card howto mb-3">
+    <summary>How to use this</summary>
+    <div class="card__body">
+      <p>A brief is the spec in <strong>spec-driven development</strong>: when a person or a coding agent picks up a work item, the quality of what comes back is capped by the quality of what went in. The checks combine Bill Wake's <strong>INVEST</strong> criteria (Independent, Negotiable, Valuable, Estimable, Small, Testable) with a lightweight <strong>Definition of Ready</strong>.</p>
+      <ol>
+        <li><strong>Write the goal first.</strong> Who benefits and what changes for them. If you cannot say why, the executor cannot make good small decisions on your behalf.</li>
+        <li><strong>Write acceptance criteria in a Three Amigos conversation</strong> (product, development, testing). The Given / When / Then helper follows BDD's Gherkin shape. Every vague word the checker flags is a review argument waiting to happen.</li>
+        <li><strong>Say how to verify.</strong> Tests to run, commands, manual checks. For an agent this is mandatory: it is how the agent proves its own work and how the reviewer avoids rereading the whole diff.</li>
+        <li><strong>State what is out of scope.</strong> Agents widen scope to be helpful; people do too. One line prevents a surprise refactor.</li>
+        <li><strong>Pick a risk tier and an executor.</strong> High risk means a second human reviewer and an agent that only drafts. Pair (person + agent) is the safe default when in doubt.</li>
+        <li><strong>Treat warnings as conversation prompts, not gates.</strong> A Definition of Ready used as a hard gate turns into bureaucracy. The aim is a shared understanding, then paste the Markdown into your tracker or the agent prompt into your coding agent.</li>
+      </ol>
+      <p class="hint">Everything stays in this browser. Nothing is sent anywhere.</p>
+    </div>
+  </details>
+
+  <div class="layout">
+    <!-- ============ Library ============ -->
+    <aside class="card library" aria-label="Saved briefs">
+      <div class="card__head">
+        <h2>Briefs</h2>
+        <span class="tag" id="lib-count">0</span>
+        <button class="btn btn--sm btn--primary" id="new-brief" type="button">New brief</button>
+      </div>
+      <div class="card__body stack" style="gap: var(--sp-3);">
+        <div class="field">
+          <label class="sr-only" for="lib-search">Search briefs</label>
+          <input type="search" id="lib-search" placeholder="Search briefs">
+        </div>
+        <ul class="lib-list" id="lib-list"></ul>
+        <div class="btn-row">
+          <button class="btn btn--sm" id="load-example-lib" type="button">Load an example</button>
+          <button class="btn btn--sm" id="import-json" type="button">Import JSON</button>
+          <button class="btn btn--sm" id="export-library" type="button">Export library</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ Editor ============ -->
+    <section class="stack" id="editor-col" aria-label="Brief editor">
+      <div id="empty" class="empty hidden">
+        <p><strong>Turn a vague ticket into a brief someone can finish.</strong></p>
+        <p>Write the goal, scope, acceptance criteria and how to verify, and a live readiness check tells you, with reasons, whether it is ready for a person or an AI agent. Export it as a Markdown ticket or as a prompt for your coding agent.</p>
+        <div class="btn-row" style="justify-content: center;">
+          <button class="btn btn--primary btn--lg" id="load-example" type="button">Load an example</button>
+          <button class="btn btn--lg" id="start-blank" type="button">Start blank</button>
+        </div>
+      </div>
+
+      <div id="editor" class="stack hidden">
+        <div class="card">
+          <div class="card__head">
+            <h2>Brief</h2>
+            <span class="tag" id="verdict-pill"></span>
+            <span class="save-state" id="save-state" aria-live="polite"></span>
+            <button class="btn btn--sm" id="dup-brief" type="button">Duplicate</button>
+            <button class="btn btn--sm btn--danger" id="del-brief" type="button">Delete</button>
+          </div>
+          <div class="card__body stack">
+            <div class="field">
+              <label class="label" for="f-title">Title</label>
+              <input type="text" id="f-title" class="title-input" data-field="title" maxlength="200" placeholder="Short, specific, findable">
+            </div>
+            <div class="meta-grid">
+              <div class="field">
+                <label class="label" for="f-type">Type</label>
+                <select id="f-type" data-field="type">
+                  <option value="feature">Feature</option>
+                  <option value="bug">Bug</option>
+                  <option value="spike">Spike</option>
+                  <option value="refactor">Refactor</option>
+                  <option value="chore">Chore</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="f-executor">Intended executor</label>
+                <select id="f-executor" data-field="executor">
+                  <option value="person">Person</option>
+                  <option value="agent">AI agent</option>
+                  <option value="pair">Pair: person + agent</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label" for="f-risk">Risk tier</label>
+                <select id="f-risk" data-field="risk" aria-describedby="risk-hint">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+            <p class="risk-hint" id="risk-hint"></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>Why</h2></div>
+          <div class="card__body stack">
+            <div class="field">
+              <label class="label" for="f-goal">Goal / outcome</label>
+              <textarea id="f-goal" data-field="goal" rows="2"></textarea>
+              <span class="hint">Why this matters and who benefits. One outcome per brief.</span>
+            </div>
+            <div class="field">
+              <label class="label" for="f-context">Context</label>
+              <textarea id="f-context" data-field="context" rows="2" placeholder="Links, files, related tickets. One per line."></textarea>
+              <span class="hint">One per line: a link, a file path, a related ticket, a decision record.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card hidden" id="type-card">
+          <div class="card__head"><h2 id="type-card-title">Details</h2></div>
+          <div class="card__body stack" id="type-fields"></div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>Scope</h2></div>
+          <div class="card__body stack">
+            <div class="field">
+              <label class="label" for="f-inscope">In scope</label>
+              <textarea id="f-inscope" data-field="inScope" rows="2"></textarea>
+            </div>
+            <div class="field">
+              <label class="label" for="f-outscope">Out of scope</label>
+              <textarea id="f-outscope" data-field="outScope" rows="2" placeholder="What must not be touched or built. One per line."></textarea>
+            </div>
+            <div class="field">
+              <label class="label" for="f-constraints">Constraints</label>
+              <textarea id="f-constraints" data-field="constraints" rows="2" placeholder="Tech, security, performance, compatibility. One per line."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Acceptance criteria</h2>
+            <button class="btn btn--sm" id="gwt-toggle" type="button" aria-expanded="false" aria-controls="gwt">Given / When / Then</button>
+            <button class="btn btn--sm" id="add-ac" type="button">Add criterion</button>
+          </div>
+          <div class="card__body stack">
+            <div class="gwt hidden" id="gwt">
+              <div class="gwt-grid">
+                <div class="field"><label class="label" for="gwt-given">Given</label><input type="text" id="gwt-given" placeholder="a signed-in admin on the Audit page"></div>
+                <div class="field"><label class="label" for="gwt-when">When</label><input type="text" id="gwt-when" placeholder="they click Export CSV"></div>
+                <div class="field"><label class="label" for="gwt-then">Then</label><input type="text" id="gwt-then" placeholder="a CSV with every row in the current filter downloads"></div>
+              </div>
+              <div class="btn-row mt-3">
+                <button class="btn btn--sm btn--primary" id="gwt-add" type="button">Add as criterion</button>
+                <button class="btn btn--sm btn--ghost" id="gwt-cancel" type="button">Cancel</button>
+              </div>
+            </div>
+            <ol class="list-edit" id="ac-list"></ol>
+            <span class="hint">Each criterion is one observable result. Numbers, named states and exact messages beat adjectives.</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>Verification</h2></div>
+          <div class="card__body stack">
+            <div class="field">
+              <label class="label" for="f-verification">How to prove it works</label>
+              <textarea id="f-verification" data-field="verification" rows="3"></textarea>
+              <span class="hint">Tests to run, commands, manual checks. One per line. Required when an agent is involved.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Open questions</h2>
+            <button class="btn btn--sm" id="add-q" type="button">Add question</button>
+          </div>
+          <div class="card__body">
+            <ul class="list-edit" id="q-list"></ul>
+            <p class="hint mt-2" id="q-empty">No open questions. Add one whenever something is still undecided, and delete it once it is answered in the brief.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <h2>Definition of Done</h2>
+            <button class="btn btn--sm btn--ghost" id="reset-dod" type="button">Reset to default</button>
+            <button class="btn btn--sm" id="add-dod" type="button">Add item</button>
+          </div>
+          <div class="card__body">
+            <ul class="list-edit" id="dod-list"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Readiness + export ============ -->
+    <aside class="stack side hidden" id="side" aria-label="Readiness and export">
+      <div class="card" id="readiness">
+        <div class="card__head"><h2>Readiness</h2></div>
+        <div class="card__body stack" style="gap: var(--sp-3);">
+          <div id="verdict" class="verdict" aria-live="polite"></div>
+          <ul class="checks" id="checks"></ul>
+          <p class="hint">Tags show the INVEST letter or Definition of Ready (DoR) item each check comes from. Warnings are prompts for a conversation, not gates.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><h2>Export</h2></div>
+        <div class="card__body stack" style="gap: var(--sp-3);">
+          <div class="tabs" role="tablist" aria-label="Export format">
+            <button class="btn btn--sm" role="tab" type="button" id="tab-md" data-tab="md" aria-controls="export-panel">Markdown ticket</button>
+            <button class="btn btn--sm" role="tab" type="button" id="tab-prompt" data-tab="prompt" aria-controls="export-panel">Agent prompt</button>
+            <button class="btn btn--sm" role="tab" type="button" id="tab-json" data-tab="json" aria-controls="export-panel">JSON</button>
+          </div>
+          <div id="export-panel" role="tabpanel" class="stack" style="gap: var(--sp-2);">
+            <p class="hint" id="export-hint"></p>
+            <pre class="preview" id="export-preview" tabindex="0" aria-label="Export preview"></pre>
+            <div class="btn-row">
+              <button class="btn btn--sm btn--primary" id="export-copy" type="button">Copy</button>
+              <button class="btn btn--sm" id="export-download" type="button">Download</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div id="toasts"></div>
+
+<script src="../../assets/js/store.js"></script>
+<script src="../../assets/js/ui.js"></script>
+<script src="./brief.js"></script>
+</body>
+</html>

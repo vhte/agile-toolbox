@@ -1,4 +1,4 @@
-# Definition of Done — Backend service / API
+# Definition of Done: Backend service / API
 
 > Done means **releasable**: nothing on this list may still be true while the change cannot reach a user.
 > Fork it, delete what your team will not honour, and get explicit agreement on the rest.
@@ -9,7 +9,7 @@
 - [ ] Reviewed by someone who did not write it, who actually read it.
 - [ ] No new linter or type-checker suppressions without a comment saying why.
 - [ ] Dead code, feature-flag leftovers and debug logging removed.
-- [ ] Errors are handled explicitly — no silent catch, no `500` where the client could have been told something useful.
+- [ ] Errors are handled explicitly: no silent catch, no `500` where the client could have been told something useful.
 
 ## Tests
 
@@ -37,7 +37,7 @@
 ## Operability
 
 - [ ] Logs, metrics and traces let an on-call engineer answer "is this working?" without a debugger.
-- [ ] New failure modes are alertable — or a conscious decision was made not to alert.
+- [ ] New failure modes are alertable, or a conscious decision was made not to alert.
 - [ ] Performance impact is understood for the realistic case (not measured only on one row).
 - [ ] Timeouts, retries and idempotency behave sanely for every new outbound call.
 - [ ] Rate limits and backpressure considered for anything a client can call in a loop.
@@ -53,4 +53,4 @@
 - [ ] Deployed to the pre-production environment and exercised there.
 - [ ] Feature flag default is deliberate, and someone owns removing the flag.
 - [ ] Acceptance criteria verified against the running system by someone other than the author.
-- [ ] The tracker item reflects reality — status, links, and what actually changed.
+- [ ] The tracker item reflects reality: status, links, and what actually changed.

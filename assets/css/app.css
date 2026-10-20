@@ -49,10 +49,12 @@
   --sp-7: 48px;
 
   --maxw: 1180px;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #0e1117;
     --surface: #161b22;
     --surface-2: #1c222b;
@@ -84,6 +86,7 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0e1117;
   --surface: #161b22;
   --surface-2: #1c222b;
@@ -323,8 +326,8 @@ table.data input, table.data select { font-size: 0.85rem; padding: 4px 6px; }
   box-shadow: var(--shadow-3);
   animation: toast-in 0.18s ease;
 }
-.toast--ok { background: var(--ok); color: #fff; }
-.toast--danger { background: var(--danger); color: #fff; }
+.toast--ok { background: var(--ok); color: var(--bg); }
+.toast--danger { background: var(--danger); color: var(--bg); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 
 /* --- Modal / dialog ------------------------------------------------------ */

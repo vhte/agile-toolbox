@@ -6,12 +6,14 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- iteration arc: the loop every one of these tools sits inside -->
-  <path d="M256 108a148 148 0 1 1-104.7 43.3"
-        fill="none" stroke="#ffffff" stroke-opacity=".45" stroke-width="26" stroke-linecap="round"/>
-  <path d="M151 96v56h56" fill="none" stroke="#ffffff" stroke-opacity=".45"
-        stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- the check: something actually got done -->
-  <path d="M175 262l58 58 108-124" fill="none" stroke="#ffffff" stroke-width="42"
-        stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(0.0 0.0) scale(1.0)">
+    <!-- the toolbox: handle, then the box with its lid seam -->
+    <path d="M196 178v-30a22 22 0 0 1 22-22h76a22 22 0 0 1 22 22v30" fill="none"
+          stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="92" y="176" width="328" height="230" rx="36" fill="#ffffff"/>
+    <rect x="92" y="236" width="328" height="12" fill="#4338ca" opacity=".22"/>
+    <!-- the iteration loop on its front: the cycle every tool sits inside -->
+    <path d="M288.1 283.7A50 50 0 1 1 238.9 275.0" fill="none" stroke="#4f46e5" stroke-width="20" stroke-linecap="round"/>
+    <path d="M262.9 266.3L225.8 263.8L236.0 292.0Z" fill="#4f46e5" stroke="#4f46e5" stroke-width="6" stroke-linejoin="round"/>
+  </g>
 </svg>

@@ -19,3 +19,6 @@ scratch/
 
 # Anything a well-meaning contributor's editor might install
 node_modules/
+
+# Screenshots written by SHOTS=1 node tests/smoke.mjs
+tests/shots/

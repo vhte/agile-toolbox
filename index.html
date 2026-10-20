@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agile Toolbox — facilitation tools that run in your browser</title>
-<meta name="description" content="Retrospectives, standups, capacity forecasting and team health surveys. No account, no backend, no data leaving your machine. Open source.">
+<title>Agile Toolbox · team tools that run in your browser</title>
+<meta name="description" content="Nine browser-only tools for teams of people and AI agents: retros, standups, health checks, capacity and flow forecasts, delegation, task briefs, decision logs and working agreements. No account, no backend, no install.">
 <meta name="theme-color" content="#4f46e5">
 <link rel="icon" href="./assets/icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
@@ -34,6 +34,11 @@
   .principle h3 { font-size: 0.95rem; margin-bottom: 5px; }
   .principle p { font-size: 0.9rem; color: var(--text-2); margin: 0; }
 
+  .group { margin-top: var(--sp-6); }
+  .group__head { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+  .group__head h2 { font-size: 1.1rem; }
+  .group__head p { margin: 0; color: var(--text-2); font-size: 0.92rem; }
+
   .roadmap { columns: 2 260px; column-gap: var(--sp-5); font-size: 0.9rem; }
   .roadmap li { margin-bottom: 6px; break-inside: avoid; }
 
@@ -46,12 +51,12 @@
 <main class="wrap">
 
   <section class="hero">
-    <h1>Facilitation tools that respect the room.</h1>
+    <h1>Team tools that respect the room.</h1>
     <p>
-      Four tools a scrum master actually opens during the week — a retro board, a standup
-      facilitator, a capacity forecaster and an anonymous team health survey. They run entirely
-      inside your browser. There is no account to create, no workspace to invite people to, and
-      no server that could ever be asked to hand over what your team said.
+      Nine tools for the work around the work: running ceremonies, forecasting honestly, and
+      writing down the rules a team of people and AI agents now needs. They run entirely in your
+      browser. There is no account, nothing to install, and no server that could ever be asked to
+      hand over what your team said.
     </p>
     <div class="badges">
       <span class="tag tag--accent">No backend</span>
@@ -62,65 +67,122 @@
     </div>
   </section>
 
-  <div class="section-title"><h2>The tools</h2></div>
-
-  <div class="tools">
+  <section class="group" aria-labelledby="g-run">
+    <div class="group__head"><h2 id="g-run">Run the ceremonies</h2><p>The meetings every team holds, run well and kept honest.</p></div>
+    <div class="tools">
     <a class="tool" href="./tools/retro/index.html" style="--tool-accent: hsl(275 60% 55%)">
       <h3><span aria-hidden="true">🔁</span> Retro Board</h3>
-      <p class="tool__what">
-        Run the whole retro in one tab: collect in silence, reveal, dot-vote, then leave with owned actions.
-      </p>
+      <p class="tool__what">Collect in silence, reveal, dot-vote, then leave with owned actions.</p>
       <ul>
-        <li>Start/Stop/Continue, 4 Ls, Sailboat, Mad/Sad/Glad</li>
-        <li>Cards hidden from everyone else until you reveal them</li>
+        <li>Five formats, including Humans + Agents</li>
+        <li>Cards hidden from everyone else until reveal</li>
         <li>Unfinished actions carry over from the last retro</li>
-        <li>Exports a Markdown summary you can paste into a ticket</li>
+        <li>Markdown summary you can paste into a ticket</li>
       </ul>
       <span class="tool__go">Open the board →</span>
     </a>
-
     <a class="tool" href="./tools/standup/index.html" style="--tool-accent: hsl(196 65% 46%)">
       <h3><span aria-hidden="true">⏱️</span> Standup Facilitator</h3>
-      <p class="tool__what">
-        Randomized order, a visible timebox per person, and blockers captured as you go instead of forgotten.
-      </p>
+      <p class="tool__what">Randomized order, a visible timebox per person, and blockers captured as you go.</p>
       <ul>
         <li>Nobody opens two days in a row</li>
         <li>Async mode compiles written updates into one digest</li>
-        <li>Blocker heatmap by <em>category</em>, never by person</li>
-        <li>Copy the digest straight into your channel</li>
+        <li>Blocker heatmap by category, never by person</li>
+        <li>Waiting on review and on agent output are categories</li>
       </ul>
       <span class="tool__go">Run a standup →</span>
     </a>
+    <a class="tool" href="./tools/health-radar/index.html" style="--tool-accent: hsl(32 75% 46%)">
+      <h3><span aria-hidden="true">🩺</span> Team Health Radar</h3>
+      <p class="tool__what">An anonymous survey that stays anonymous, because there is no service in the middle.</p>
+      <ul>
+        <li>Classic and Humans + AI question sets</li>
+        <li>Answers travel as short codes with no identity</li>
+        <li>Results stay hidden until three people answer</li>
+        <li>Radar, spread of opinion and trend across rounds</li>
+      </ul>
+      <span class="tool__go">Take the pulse →</span>
+    </a>
+    </div>
+  </section>
 
+  <section class="group" aria-labelledby="g-plan">
+    <div class="group__head"><h2 id="g-plan">Plan and forecast</h2><p>Ranges with confidence attached, from your own history, never a single promised number.</p></div>
+    <div class="tools">
     <a class="tool" href="./tools/capacity/index.html" style="--tool-accent: hsl(152 55% 40%)">
       <h3><span aria-hidden="true">📐</span> Sprint Capacity Planner</h3>
-      <p class="tool__what">
-        Time off, part-time allocation and on-call duty turned into an honest commitment range instead of a guess.
-      </p>
+      <p class="tool__what">Time off, part-time allocation and on-call duty turned into an honest commitment range.</p>
       <ul>
         <li>Working days, holidays and shared people handled properly</li>
-        <li>10,000-run Monte Carlo over your own throughput history</li>
+        <li>10,000-run Monte Carlo over your throughput history</li>
         <li>Answers “what are the odds we finish 34 points?”</li>
         <li>Clone a plan into the next sprint in one click</li>
       </ul>
       <span class="tool__go">Plan a sprint →</span>
     </a>
-
-    <a class="tool" href="./tools/health-radar/index.html" style="--tool-accent: hsl(32 75% 46%)">
-      <h3><span aria-hidden="true">🩺</span> Team Health Radar</h3>
-      <p class="tool__what">
-        An anonymous survey that stays anonymous, because there is no service in the middle to know who answered.
-      </p>
+    <a class="tool" href="./tools/flow/index.html" style="--tool-accent: hsl(228 60% 52%)">
+      <h3><span aria-hidden="true">🌊</span> Flow Forecaster</h3>
+      <p class="tool__what">Paste a CSV from any tracker and see where work actually waits.</p>
       <ul>
-        <li>Each person's answers become a short numeric code</li>
-        <li>Codes carry no name, no free text, no device id</li>
-        <li>Results stay hidden until three people have answered</li>
-        <li>Radar plus a trend line across rounds</li>
+        <li>Cycle time percentiles, throughput and WIP</li>
+        <li>Aging work flagged before it becomes late</li>
+        <li>Compare segments, e.g. agent-assisted vs not</li>
+        <li>“How many by date?” and “when will N be done?”</li>
       </ul>
-      <span class="tool__go">Take the pulse →</span>
+      <span class="tool__go">Forecast from data →</span>
     </a>
-  </div>
+    </div>
+  </section>
+
+  <section class="group" aria-labelledby="g-make">
+    <div class="group__head"><h2 id="g-make">Make the rules explicit</h2><p>Teams now include AI agents. These tools write down what used to live in people’s heads.</p></div>
+    <div class="tools">
+    <a class="tool" href="./tools/agreements/index.html" style="--tool-accent: hsl(340 60% 50%)">
+      <h3><span aria-hidden="true">🤝</span> Working Agreements</h3>
+      <p class="tool__what">The team’s rules, including the ones for AI, written by the team.</p>
+      <ul>
+        <li>Guided sections with suggested agreements</li>
+        <li>Anonymous Fist of Five consent check</li>
+        <li>A clear AI stance, ready to adopt or edit</li>
+        <li>Exports the agreement and an AGENTS.md file</li>
+      </ul>
+      <span class="tool__go">Write the agreement →</span>
+    </a>
+    <a class="tool" href="./tools/delegation/index.html" style="--tool-accent: hsl(300 45% 52%)">
+      <h3><span aria-hidden="true">🎚️</span> Delegation Board</h3>
+      <p class="tool__what">Who decides what: people, leads and AI agents.</p>
+      <ul>
+        <li>Delegation Poker levels 1 to 7 for people</li>
+        <li>Autonomy ladder 0 to 5 for agents</li>
+        <li>Warns on risky autonomy without guardrails</li>
+        <li>Exports a matrix and an AGENTS.md section</li>
+      </ul>
+      <span class="tool__go">Map the decisions →</span>
+    </a>
+    <a class="tool" href="./tools/brief/index.html" style="--tool-accent: hsl(12 70% 52%)">
+      <h3><span aria-hidden="true">📝</span> Task Brief</h3>
+      <p class="tool__what">Write work items a teammate or an AI agent can actually finish.</p>
+      <ul>
+        <li>Live readiness check that explains itself</li>
+        <li>Flags vague acceptance criteria</li>
+        <li>Risk tiers that limit agent autonomy</li>
+        <li>Exports a ticket body and an agent prompt</li>
+      </ul>
+      <span class="tool__go">Write a brief →</span>
+    </a>
+    <a class="tool" href="./tools/decisions/index.html" style="--tool-accent: hsl(60 60% 36%)">
+      <h3><span aria-hidden="true">🧭</span> Decision Log</h3>
+      <p class="tool__what">Record why, not just what, before the thread scrolls away.</p>
+      <ul>
+        <li>One-line quick capture: “We decided X because Y”</li>
+        <li>MADR-style records with options, pros and cons</li>
+        <li>Supersede flow and revisit-due reminders</li>
+        <li>Exports ADRs, the full log or an AGENTS.md index</li>
+      </ul>
+      <span class="tool__go">Open the log →</span>
+    </a>
+    </div>
+  </section>
 
   <div class="section-title"><h2>Why it is built this way</h2></div>
 
@@ -142,8 +204,8 @@
     <div class="principle">
       <h3>Ranges, not single numbers</h3>
       <p>
-        The capacity planner refuses to produce one figure, because one figure becomes a promise.
-        It gives you a forecast with a confidence attached and expects you to say so out loud.
+        The capacity planner and the flow forecaster refuse to produce one figure, because one
+        figure becomes a promise. You get a forecast with a confidence attached, to say out loud.
       </p>
     </div>
     <div class="principle">
@@ -167,7 +229,7 @@
       </div>
       <p class="hint">
         A backup is a single JSON file covering every tool. Restoring merges it into what is already
-        here — useful for moving between machines, or for handing a team's history to whoever takes
+        here, which is useful for moving between machines, or for handing a team's history to whoever takes
         over facilitation. Clearing your browser's site data does the same thing as the erase button,
         which is worth knowing before you rely on this for anything you cannot lose.
       </p>
@@ -180,23 +242,23 @@
     <div class="card"><div class="card__body">
       <h3>Definition of Done &amp; Ready templates</h3>
       <p class="muted tiny mt-2">
-        Forkable Markdown checklists per team type — backend, frontend, platform, data, mobile —
+        Forkable Markdown checklists per team type (backend, frontend, platform, data, mobile)
         plus a Definition of Ready. Version-control your DoD instead of losing it in a wiki page
         nobody has opened since onboarding.
       </p>
       <p class="tiny"><code class="mono">templates/dod-dor/</code></p>
     </div></div>
     <div class="card"><div class="card__body">
-      <h3>Roadmap — good first issues</h3>
+      <h3>Roadmap: good first issues</h3>
       <ul class="roadmap muted">
         <li>Cross-team dependency tracker</li>
-        <li>Interactive ceremony playbook (PWA, offline)</li>
-        <li>Refinement / estimation session helper</li>
-        <li>Working agreement builder</li>
+        <li>Interactive ceremony playbook</li>
+        <li>Pass-the-device estimation round</li>
         <li>Impediment escalation log</li>
+        <li>Incident review (blameless postmortem) guide</li>
         <li>i18n string tables</li>
       </ul>
-      <p class="tiny mt-2">See <code class="mono">CONTRIBUTING.md</code> — a new tool is one folder and two files.</p>
+      <p class="tiny mt-2">See <code class="mono">CONTRIBUTING.md</code>. A new tool is one folder and two files.</p>
     </div></div>
   </div>
 
@@ -215,26 +277,43 @@
 (function () {
   "use strict";
 
+  // One entry per tool namespace; the label is what the person recognises.
+  var TOOLS = [
+    { ns: "retro", label: "Retro Board" },
+    { ns: "standup", label: "Standup" },
+    { ns: "radar", label: "Health Radar" },
+    { ns: "capacity", label: "Capacity" },
+    { ns: "flow", label: "Flow" },
+    { ns: "agreements", label: "Agreements" },
+    { ns: "delegation", label: "Delegation" },
+    { ns: "brief", label: "Task Brief" },
+    { ns: "decisions", label: "Decision Log" }
+  ];
+
+  function nsBytes(ns) {
+    return Store.keys(ns).reduce(function (sum, k) {
+      return sum + k.length + JSON.stringify(Store.read(ns, k, null)).length;
+    }, 0);
+  }
+
+  function size(bytes) {
+    return bytes < 1024 ? bytes + " B" : (bytes / 1024).toFixed(1) + " KB";
+  }
+
   function renderUsage() {
     var host = UI.clear(UI.qs("#usage-stats"));
-    var bytes = Store.usage();
-    var counts = {
-      retro: Store.keys("retro").filter(function (k) { return k.indexOf("board:") === 0; }).length,
-      standup: (Store.read("standup", "sessions", []) || []).length,
-      capacity: (Store.read("capacity", "plans", []) || []).length,
-      radar: (Store.read("radar", "rounds", []) || []).length
-    };
-    [
-      { label: "Retro boards", value: String(counts.retro) },
-      { label: "Standups recorded", value: String(counts.standup) },
-      { label: "Capacity plans", value: String(counts.capacity) },
-      { label: "Health rounds", value: String(counts.radar) },
-      {
-        label: "Stored locally",
-        value: bytes < 1024 ? bytes + " B" : (bytes / 1024).toFixed(1) + " KB",
-        sub: Store.isPersistent ? "in this browser only" : "memory only — storage is blocked"
-      }
-    ].forEach(function (s) {
+    var used = TOOLS.filter(function (t) { return Store.keys(t.ns).length; });
+    var stats = [{
+      label: "Stored locally",
+      value: size(Store.usage()),
+      sub: Store.isPersistent ? "in this browser only" : "memory only: storage is blocked"
+    }, {
+      label: "Tools with data",
+      value: used.length + " of " + TOOLS.length,
+      sub: used.length ? used.map(function (t) { return t.label; }).join(", ") : "nothing saved yet"
+    }];
+    used.forEach(function (t) { stats.push({ label: t.label, value: size(nsBytes(t.ns)) }); });
+    stats.forEach(function (s) {
       host.appendChild(UI.el("div", { class: "stat" }, [
         UI.el("div", { class: "stat__label", text: s.label }),
         UI.el("div", { class: "stat__value", text: s.value }),
@@ -264,7 +343,7 @@
     });
 
     UI.qs("#wipe").addEventListener("click", function () {
-      if (!UI.confirmDanger("Erase every board, standup, plan and health round stored in this browser? Back up first — this cannot be undone.")) return;
+      if (!UI.confirmDanger("Erase everything every tool has stored in this browser? Back up first: this cannot be undone.")) return;
       if (!UI.confirmDanger("Last check: this really does delete everything. Continue?")) return;
       Store.clearAll();
       UI.theme.apply("system");
@@ -274,7 +353,7 @@
 
     var offline = UI.qs("#offline-state");
     if (location.protocol === "file:") {
-      offline.textContent = "Opened from disk — already offline, service worker not needed";
+      offline.textContent = "Opened from disk: already offline, no service worker needed";
     } else if ("serviceWorker" in navigator) {
       navigator.serviceWorker.getRegistration().then(function (reg) {
         offline.textContent = reg ? "Cached for offline use" : "Offline cache installing…";

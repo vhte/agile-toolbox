@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision Log · Agile Toolbox</title>
+<meta name="description" content="A lightweight decision log in MADR style: capture a decision and its reason in one line, expand it later, supersede it cleanly, and export ADRs or an index for AGENTS.md.">
+<link rel="icon" href="../../assets/icons/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="../../manifest.json">
+<link rel="stylesheet" href="../../assets/css/app.css">
+<style>
+  .dl-toolbar { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: flex-end; }
+  .dl-toolbar .field { flex: 1 1 220px; max-width: 320px; }
+  @media (max-width: 700px) { .dl-toolbar .topbar__spacer { display: none; } .dl-toolbar .field { max-width: none; } }
+
+  .dl-summary { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; font-size: 0.85rem; }
+  .sum-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px 3px 4px; font: inherit; font-size: 0.82rem; color: var(--text-2);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px; cursor: pointer;
+  }
+  .sum-btn:hover { background: var(--surface-2); }
+  .sum-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--text); }
+  .sum-btn strong { font-variant-numeric: tabular-nums; color: var(--text); }
+  .sum-total { color: var(--text-2); margin-right: var(--sp-1); }
+
+  .quick { display: flex; gap: var(--sp-2); align-items: stretch; }
+  .quick input { font-size: 1rem; padding: 10px 12px; flex: 1 1 auto; }
+  @media (max-width: 520px) { .quick { flex-direction: column; } }
+
+  .dl-layout { display: grid; gap: var(--sp-4); grid-template-columns: minmax(0, 400px) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .dl-layout { grid-template-columns: minmax(0, 1fr); } }
+
+  .filters { display: grid; gap: var(--sp-2); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .sort-select { width: auto; flex: 0 1 auto; padding: 4px 6px; font-size: 0.82rem; }
+  .filters .search { grid-column: 1 / -1; }
+
+  .rec-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  @media (min-width: 901px) { .rec-list { max-height: 68vh; overflow-y: auto; } }
+  .rec-row {
+    width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px var(--sp-3);
+    text-align: left; padding: var(--sp-2) var(--sp-3); font: inherit; color: var(--text);
+    background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm); cursor: pointer;
+  }
+  .rec-row:hover { background: var(--surface-2); }
+  .rec-row[aria-current="true"] { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .rec-num { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-2); padding-top: 2px; }
+  .rec-title { font-weight: 600; font-size: 0.92rem; overflow-wrap: anywhere; }
+  .rec-title.untitled { color: var(--text-3); font-style: italic; font-weight: 500; }
+  .rec-meta { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 0.76rem; color: var(--text-3); }
+  .rec-meta .tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+  .title-input { font-size: 1.08rem !important; font-weight: 650; }
+  .rec-head { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: flex-end; }
+  .rec-head .num-big { font-family: var(--font-mono); font-size: 1rem; color: var(--text-2); padding-bottom: 8px; }
+  .form-grid { display: grid; align-items: end; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .refs { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; font-size: 0.86rem; }
+  .refs:empty { display: none; }
+  .ref-link { font: inherit; background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-align: left; overflow-wrap: anywhere; }
+
+  .opt-card { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); padding: var(--sp-3); }
+  .opt-grid { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: var(--sp-2); }
+
+  .howto { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3) var(--sp-4); }
+  .howto summary { cursor: pointer; font-weight: 600; }
+  .howto ul { margin: var(--sp-2) 0 0; padding-left: 1.2em; color: var(--text-2); font-size: 0.9rem; }
+  .howto li { margin-bottom: var(--sp-1); }
+
+  .intro { text-align: left; max-width: 640px; margin: 0 auto; }
+  .intro h1 { color: var(--text); margin-bottom: var(--sp-2); }
+  .intro p { color: var(--text-2); }
+
+  #detail textarea { overflow-y: hidden; }
+  :root[data-theme="dark"] input[type="date"] { color-scheme: dark; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) input[type="date"] { color-scheme: dark; } }
+
+  #md-text { font-family: var(--font-mono); font-size: 0.8rem; min-height: 50vh; white-space: pre; }
+</style>
+</head>
+<body data-title="Decision Log" data-root="../../">
+
+<main class="wrap wrap--wide stack">
+
+  <section id="no-logs" class="empty hidden" aria-labelledby="intro-title">
+    <div class="intro">
+      <h1 id="intro-title">Decision Log</h1>
+      <p>Decisions now happen in chat threads, calls and AI sessions, and the reasoning scrolls away with them. Record the decision and the reason in one line, expand it into a lightweight ADR when it matters, and hand the index to newcomers and AI agents.</p>
+      <div class="btn-row mt-3">
+        <button class="btn btn--primary" id="load-example-empty" type="button">Load an example</button>
+        <button class="btn" id="start-empty" type="button">Start an empty log</button>
+        <button class="btn" id="import-empty" type="button">Import JSON</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="app" class="stack hidden">
+    <div class="dl-toolbar">
+      <div class="field">
+        <label class="label" for="log-select">Decision log</label>
+        <select id="log-select"></select>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn--primary" id="new-log" type="button">New log</button>
+        <button class="btn" id="rename-log" type="button">Rename</button>
+        <button class="btn btn--danger" id="delete-log" type="button">Delete</button>
+        <button class="btn btn--ghost" id="load-example" type="button">Load an example</button>
+      </div>
+      <div class="topbar__spacer"></div>
+      <div class="btn-row">
+        <button class="btn" id="export-log-md" type="button">Log as Markdown</button>
+        <button class="btn" id="export-agents" type="button">Index for AGENTS.md</button>
+        <button class="btn" id="export-json" type="button">Export JSON</button>
+        <button class="btn" id="import-json" type="button">Import JSON</button>
+      </div>
+    </div>
+
+    <div class="dl-summary" id="summary" aria-live="polite"></div>
+
+    <div class="card">
+      <div class="card__body">
+        <label class="label" for="quick">Quick capture</label>
+        <div class="quick mt-2">
+          <input type="text" id="quick" autocomplete="off"
+                 placeholder="We decided to ... because ..."
+                 aria-describedby="quick-hint">
+          <button class="btn btn--primary" id="quick-add" type="button">Record</button>
+        </div>
+        <p class="hint mt-2" id="quick-hint">Press Enter. The text before the first "because" becomes the decision, the rest becomes the rationale. It is saved as Proposed; open it later to add options and consequences.</p>
+      </div>
+    </div>
+
+    <div class="dl-layout">
+      <div class="card">
+        <div class="card__head">
+          <h2>Decisions</h2>
+          <span class="tag" id="list-count" aria-live="polite">0</span>
+          <label class="sr-only" for="sort">Sort</label>
+          <select id="sort" class="sort-select">
+            <option value="num-desc">Number, newest</option>
+            <option value="num-asc">Number, oldest</option>
+            <option value="date-desc">Date, newest</option>
+            <option value="date-asc">Date, oldest</option>
+          </select>
+        </div>
+        <div class="card__body stack">
+          <div class="filters">
+            <div class="field search">
+              <label class="sr-only" for="search">Search decisions</label>
+              <input type="search" id="search" placeholder="Search title, tags, text">
+            </div>
+            <div class="field">
+              <label class="sr-only" for="filter-status">Filter by status</label>
+              <select id="filter-status"></select>
+            </div>
+            <div class="field">
+              <label class="sr-only" for="filter-tag">Filter by tag</label>
+              <select id="filter-tag"></select>
+            </div>
+          </div>
+          <ul class="rec-list" id="rec-list" aria-label="Decision records"></ul>
+          <div id="list-empty" class="empty hidden"></div>
+        </div>
+      </div>
+
+      <div class="card" id="detail-card">
+        <div id="detail" class="card__body stack"></div>
+      </div>
+    </div>
+  </div>
+
+  <details class="howto">
+    <summary>How to use this</summary>
+    <ul>
+      <li><strong>What deserves a record:</strong> anything a new teammate would find arbitrary in six months without the reasoning, and anything decided on incomplete information that should be revisited. Skip the trivially reversible.</li>
+      <li><strong>Capture first, polish later.</strong> One line in the thread or at the end of the call ("We decided X because Y") beats a perfect ADR nobody writes. Expand the important ones afterwards.</li>
+      <li><strong>The fields follow MADR</strong> (Markdown Any Decision Records), itself a descendant of Michael Nygard's Architecture Decision Records: context and problem, decision drivers, options with pros and cons, the chosen option and why, and consequences.</li>
+      <li><strong>Decision owner</strong> is the person or role accountable for the decision and for revisiting it. It is ownership, not a metric: this tool never counts decisions per person.</li>
+      <li><strong>Never edit history; supersede it.</strong> "Supersede with new decision" drafts a linked record. The old decision stays Accepted until the new one is Accepted, so a rejected proposal never leaves the team without a decision.</li>
+      <li><strong>Revisit by</strong> plus <strong>Confidence</strong> make low-confidence calls visible: Accepted records on or past their date get a "Revisit due" badge.</li>
+      <li><strong>AI-proposed decisions</strong> are fine when a human accepts them; mark the origin so the team knows to check the reasoning. The "Index for AGENTS.md" export gives agents and newcomers the accepted decisions in a few lines.</li>
+      <li><strong>Import JSON</strong> merges records into the selected log. Numbers already used (or retired) in that log are renumbered, and the tool tells you which.</li>
+    </ul>
+  </details>
+</main>
+
+<dialog id="md-dialog" aria-labelledby="md-title">
+  <div class="card__head">
+    <h2 id="md-title">Export</h2>
+    <button class="btn btn--ghost btn--sm" id="md-close" type="button">Close</button>
+  </div>
+  <div class="card__body stack">
+    <label class="sr-only" for="md-text">Exported Markdown</label>
+    <textarea id="md-text" readonly spellcheck="false"></textarea>
+    <div class="btn-row">
+      <button class="btn btn--primary" id="md-copy" type="button">Copy</button>
+      <button class="btn" id="md-download" type="button">Download</button>
+      <span class="hint" id="md-file"></span>
+    </div>
+  </div>
+</dialog>
+
+<div id="toasts"></div>
+
+<script src="../../assets/js/store.js"></script>
+<script src="../../assets/js/ui.js"></script>
+<script src="./decisions.js"></script>
+</body>
+</html>

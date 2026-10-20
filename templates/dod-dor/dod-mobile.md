@@ -1,4 +1,4 @@
-# Definition of Done — Mobile (iOS / Android)
+# Definition of Done: Mobile (iOS / Android)
 
 > Mobile has a property web does not: **the old version does not go away**.
 > Anything on this list that ships wrong stays in the wild for months.
@@ -14,7 +14,7 @@
 
 ## Behaviour
 
-- [ ] Loading, empty, error and offline states implemented — offline especially.
+- [ ] Loading, empty, error and offline states implemented: offline especially.
 - [ ] Works with **no network**, with a slow network, and when the network drops mid-request.
 - [ ] Handles process death and restore: state comes back, or the user is told why it cannot.
 - [ ] Background / foreground transitions do not lose work or duplicate a request.

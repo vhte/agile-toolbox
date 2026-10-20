@@ -44,11 +44,20 @@
         { id: "sad", name: "Sad", emoji: "😔", hue: 232, prompt: "What disappointed you?" },
         { id: "glad", name: "Glad", emoji: "😄", hue: 152, prompt: "What made you glad?" }
       ]
+    },
+    agents: {
+      label: "Humans + Agents",
+      columns: [
+        { id: "helped", name: "AI helped", emoji: "⚡", hue: 152, prompt: "Where did agents or AI save us time or improve quality?" },
+        { id: "cost", name: "AI cost us", emoji: "🧾", hue: 5, prompt: "Where did it cause rework, wrong output or extra review load?" },
+        { id: "trust", name: "Trust calibration", emoji: "⚖️", hue: 44, prompt: "Where did we trust it too much, or too little?" },
+        { id: "trynext", name: "Try next", emoji: "🧪", hue: 222, prompt: "One change to how we work with agents." }
+      ]
     }
   };
 
   var PHASES = [
-    { id: "collect", label: "1 · Collect", help: "Everyone writes in silence. With masking on, only you can read your own cards — that is the point." },
+    { id: "collect", label: "1 · Collect", help: "Everyone writes in silence. With masking on, only you can read your own cards. That is the point." },
     { id: "reveal", label: "2 · Reveal", help: "Read the cards out loud, one column at a time. Group duplicates instead of debating them." },
     { id: "vote", label: "3 · Vote", help: "Each person spends their dots on what they want to discuss. No campaigning." },
     { id: "discuss", label: "4 · Discuss", help: "Work top-down by votes. Timebox each topic and leave with owned actions, not opinions." }
@@ -111,7 +120,7 @@
   function openBoard(id) {
     var board = Store.read(NS, "board:" + id, null);
     if (!board) {
-      UI.toast("That board is gone — opening the most recent one instead.", "danger");
+      UI.toast("That board is gone. Opening the most recent one instead.", "danger");
       state.index = state.index.filter(function (b) { return b.id !== id; });
       saveIndex();
       bootBoard();
@@ -149,7 +158,7 @@
   function bootBoard() {
     loadIndex();
     if (!state.index.length) {
-      state.board = newBoard("Sprint retro — " + UI.prettyDate(UI.isoDate()), "sss");
+      state.board = newBoard("Sprint retro · " + UI.prettyDate(UI.isoDate()), "sss");
       state.mine = { cards: [], votes: {} };
       renderAll();
       return;
@@ -317,6 +326,9 @@
       });
       ta.addEventListener("blur", commit);
       function commit() {
+        // Re-rendering removes this textarea, which fires blur: after Escape
+        // (or a commit already done) the edit is over and must not be saved.
+        if (state.editing !== card.id) return;
         var next = ta.value.trim();
         if (!next) { UI.toast("A card needs some text.", "danger"); ta.focus(); return; }
         card.text = next;
@@ -551,7 +563,14 @@
           var target = state.board.cards.filter(function (c) { return c.id === sel.value; })[0];
           if (target) {
             target.children = target.children || [];
-            target.children.push({ text: card.text, author: card.author, votes: card.votes || 0 });
+            // Fold the card's own votes into the target, and move this browser's
+            // dots with them; otherwise deleting the card refunds dots that are
+            // still counted on the group.
+            target.children.push({ text: card.text, author: card.author, votes: 0 });
+            target.votes = (target.votes || 0) + (card.votes || 0);
+            if (state.mine.votes[card.id]) {
+              state.mine.votes[target.id] = (state.mine.votes[target.id] || 0) + state.mine.votes[card.id];
+            }
             (card.children || []).forEach(function (ch) { target.children.push(ch); });
             deleteCard(card.id);
           }
@@ -582,7 +601,7 @@
     if (!state.board.actions.length) {
       host.appendChild(UI.el("p", {
         class: "empty",
-        text: "No actions yet. A retro without owned actions is a vent session — add at most two or three."
+        text: "No actions yet. A retro without owned actions is a vent session. Add two or three at most."
       }));
       return;
     }
@@ -599,14 +618,17 @@
         type: "text", class: "action-text", value: action.text,
         placeholder: "What will change?", "aria-label": "Description of " + nth
       });
-      text.addEventListener("input", UI.debounce(function () { action.text = text.value; saveBoard(); }, 300));
+      // Assign at once, debounce only the save: ticking Done or picking a due
+      // date re-renders the row from the model straight after.
+      var saveSoon = UI.debounce(saveBoard, 300);
+      text.addEventListener("input", function () { action.text = text.value; saveSoon(); });
       row.appendChild(text);
 
       var owner = UI.el("input", {
         type: "text", class: "action-owner", value: action.owner || "",
         placeholder: "Owner", "aria-label": "Owner of " + nth
       });
-      owner.addEventListener("input", UI.debounce(function () { action.owner = owner.value; saveBoard(); }, 300));
+      owner.addEventListener("input", function () { action.owner = owner.value; saveSoon(); });
       row.appendChild(owner);
 
       var due = UI.el("input", {
@@ -702,31 +724,36 @@
   }
 
   /* --- Export / import -------------------------------------------------- */
+  /** Multi-line card text stays inside its list item instead of breaking it. */
+  function mdItem(text, indent) {
+    return String(text || "").replace(/\s*\n\s*/g, "\n" + indent + "  ");
+  }
+
   function toMarkdown() {
     var b = state.board;
     var out = ["# " + b.title, ""];
-    out.push("_" + UI.prettyDate(b.createdAt.slice(0, 10)) + " · Format: " + fmt().label + "_", "");
+    out.push("_" + UI.prettyDate(UI.isoDate(new Date(b.createdAt))) + " · Format: " + fmt().label + "_", "");
     fmt().columns.forEach(function (col) {
       var list = cardsIn(col.id).slice().sort(function (x, y) { return totalVotes(y) - totalVotes(x); });
       out.push("## " + col.emoji + " " + col.name);
       if (!list.length) out.push("_(nothing raised)_");
       list.forEach(function (c) {
         var v = totalVotes(c);
-        out.push("- " + (v ? "**(" + v + "▲)** " : "") + c.text +
-          (c.author ? "  — " + c.author : ""));
-        (c.children || []).forEach(function (ch) { out.push("  - " + ch.text); });
+        out.push("- " + (v ? "**(" + v + "▲)** " : "") + mdItem(c.text, "") +
+          (c.author ? " (" + c.author + ")" : ""));
+        (c.children || []).forEach(function (ch) { out.push("  - " + mdItem(ch.text, "  ")); });
       });
       out.push("");
     });
     out.push("## ✅ Action items");
-    if (!b.actions.length) out.push("_(none agreed — worth asking why)_");
+    if (!b.actions.length) out.push("_(none agreed, worth asking why)_");
     b.actions.forEach(function (a) {
-      out.push("- [" + (a.done ? "x" : " ") + "] " + (a.text || "(unnamed)") +
-        (a.owner ? " — **" + a.owner + "**" : "") +
-        (a.due ? " — due " + a.due : "") +
+      out.push("- [" + (a.done ? "x" : " ") + "] " + mdItem(a.text || "(unnamed)", "") +
+        (a.owner ? ", owner **" + a.owner + "**" : "") +
+        (a.due ? ", due " + a.due : "") +
         (a.carriedFrom ? " _(carried from " + a.carriedFrom + ")_" : ""));
     });
-    out.push("", "---", "_Generated with Agile Toolbox — Retro Board._");
+    out.push("", "---", "_Generated with Agile Toolbox · Retro Board._");
     return out.join("\n");
   }
 
@@ -757,7 +784,7 @@
 
   function askNewBoard() {
     var dlg = UI.el("dialog");
-    var title = UI.el("input", { type: "text", value: "Sprint retro — " + UI.prettyDate(UI.isoDate()) });
+    var title = UI.el("input", { type: "text", value: "Sprint retro · " + UI.prettyDate(UI.isoDate()) });
     var sel = UI.el("select");
     Object.keys(FORMATS).forEach(function (k) {
       sel.appendChild(UI.el("option", { value: k, text: FORMATS[k].label }));

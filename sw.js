@@ -1,11 +1,11 @@
 /* ==========================================================================
-   Service worker — the only reason this file exists is so the toolbox opens
+   Service worker. The only reason this file exists is so the toolbox opens
    in a meeting room with bad wifi. It caches the app shell and nothing else;
    there is no user data here, and no network request to any third party.
 
    Bump CACHE when you change any asset, or returning users keep the old copy.
    ========================================================================== */
-var CACHE = "agile-toolbox-v1";
+var CACHE = "agile-toolbox-v2";
 
 var SHELL = [
   "./",
@@ -19,10 +19,20 @@ var SHELL = [
   "./tools/retro/retro.js",
   "./tools/standup/index.html",
   "./tools/standup/standup.js",
+  "./tools/health-radar/index.html",
+  "./tools/health-radar/radar.js",
   "./tools/capacity/index.html",
   "./tools/capacity/capacity.js",
-  "./tools/health-radar/index.html",
-  "./tools/health-radar/radar.js"
+  "./tools/flow/index.html",
+  "./tools/flow/flow.js",
+  "./tools/agreements/index.html",
+  "./tools/agreements/agreements.js",
+  "./tools/delegation/index.html",
+  "./tools/delegation/delegation.js",
+  "./tools/brief/index.html",
+  "./tools/brief/brief.js",
+  "./tools/decisions/index.html",
+  "./tools/decisions/decisions.js"
 ];
 
 self.addEventListener("install", function (event) {
